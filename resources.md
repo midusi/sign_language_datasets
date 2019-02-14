@@ -14,7 +14,7 @@
 * [Tutorial 1](https://uoftcoders.github.io/studyGroup/lessons/python/packages/lesson/)
 * [Tutorial 2 (es)](https://rukbottoland.com/blog/distribucion-de-librerias-python-con-setuppy/)
 
-##IDEs
+## IDEs
 * [PyCharm](https://www.jetbrains.com/pycharm/)
 
 ## LSA
