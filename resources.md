@@ -21,3 +21,9 @@
 * [Oraciones](https://www.youtube.com/watch?v=0aF4x50I99o)
 * [Verbos](https://www.youtube.com/watch?v=0kxVi4XLIj8)
 * [Abecedario y Vocabulario](https://www.youtube.com/watch?v=JPmIqsTGiLM)
+* [Preguntas Frecuentes (confederación argentina de sordos)](http://cas.org.ar/servicios/faq-preguntas-mas-frecuentes/lengua-de-senas/)
+* [Historia de la LSA](http://www.cultura-sorda.org/argentina-atlas/)
+
+
+
+
