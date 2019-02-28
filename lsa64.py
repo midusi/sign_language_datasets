@@ -12,14 +12,8 @@ from tempfile import mkdtemp
 class lsa64(object):
 
     def __init__(self, version):
-        if version not in ['raw', 'cut', 'pre', 'prueba']:
-            raise ValueError(
-                'version for lsa64("version"), must be "cut", "raw" or "pre"')
-        else:
-            self.x = dh('lsa64_' + version)
-            self.base_url = self.x.get_my_url()
-
-        # self.base_url = "https://github.com/tefenet/tp3/archive/master.zip"
+        self.x = dh.factory(self.__class__.__name__ + '_' + version)
+        self.base_url = self.x.get_my_url()
 
     def load_videos(self):
         print("generator for videos in %s" % self.x.get_my_path())
@@ -43,8 +37,6 @@ class lsa64(object):
     def download(self):
         r = gdown.download(f'{self.x.get_my_url()}', f'{mkdtemp()}', False)
         return os.path.join(r, os.listdir(r)[0])
-        # with get(self.base_url) as r:
-        #     return zf(BytesIO(r.content))
 
     def load_data(self):
         # download dataset (if necessary)
@@ -52,8 +44,3 @@ class lsa64(object):
             self.download_and_extract()
         # load video generator
         return self.load_videos()
-
-
-lsa64('prueba').load_data()
-
-# sys.argv[1]
