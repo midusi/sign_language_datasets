@@ -3,22 +3,16 @@ import os
 
 
 class DatasetHandler(object):
-    handler_class = {'lsa64_raw': 'DH_Lsa64',
-                     'lsa64_cut': 'DH_Lsa64',
-                     'lsa64_pre': 'DH_Lsa64_pre',
-                     'lsa64_prueba': 'DH_Test'}
+    handler_class = {f'LSA64_raw': 'DH_Lsa64',
+                     'LSA64_cut': 'DH_Lsa64',
+                     'LSA64_pre': 'DH_Lsa64_pre',
+                     'LSA64_prueba': 'DH_Test'}
 
     def __init__(self, version):
         self.version = version
-        my_path = self.get_my_path()
-        os.makedirs(my_path, exist_ok=True)
-        os.chdir(my_path)
 
-    def get_lib_root(self):
-        return os.path.join(Path.home(), '.lsDatasets')
-
-    def get_my_path(self):
-        return os.path.join(f'{self.get_lib_root()}', self.version)
+    def dataset_path(self,root):
+        return os.path.join(root, self.version)
 
     @staticmethod
     def factory(version):

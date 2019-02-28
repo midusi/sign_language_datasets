@@ -3,3 +3,5 @@ scikit-learn
 scikit-image
 scikit-video
 matplotlib
+requests
+gdown
