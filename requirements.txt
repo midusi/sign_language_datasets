@@ -1,7 +1,6 @@
-numpy
-scikit-learn
-scikit-image
 scikit-video
 matplotlib
-requests
 gdown
+pathlib
+opencv-python
+tensorflow
