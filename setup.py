@@ -6,7 +6,7 @@ REQUIRED_PACKAGES =[
     'gdown',
     'pathlib',
     'opencv-python',
-    'tensorflow',   
+    'tensorflow',
 ]
 
 project_urls={
@@ -29,12 +29,10 @@ setup(
     install_requires=REQUIRED_PACKAGES,
     #zip_safe=False,
     classifiers=[
-        'Development Status :: 3 - Alpha',
-        'License :: OSI Approved :: GNU License',
+        'Development Status :: 2 - Pre-Alpha',
+        'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.7',
-        'Topic :: Manager',
-        'Topic :: Sign Language',
-        'Topic :: Datasets'
+        'Topic :: Software Development :: Libraries :: Python Modules'
     ]
 )
