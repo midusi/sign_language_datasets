@@ -9,10 +9,10 @@ REQUIRED_PACKAGES =[
     'tensorflow',
 ]
 
-project_urls={
-    "Bug Tracker": "'https://github.com/midusi/sign_language_datasets/',issues",
-    "Documentation": "'https://github.com/midusi/sign_language_datasets/wiki',",
-    "Source Code": "'https://github.com/midusi/sign_language_datasets",
+PROJECT_URLS={
+    'Tracker': 'https://github.com/midusi/sign_language_datasets/issues',
+    'Documentation': 'https://github.com/midusi/sign_language_datasets/wiki',
+    'Source': 'https://github.com/midusi/sign_language_datasets',
 }
 
 setup(
@@ -24,7 +24,8 @@ setup(
         'A single library to (down)load all existing sign language video datasets.'),
     license='GNU',
     keywords='sign-language sign language dataset download load video',
-    project_urls=project_urls,
+    url='https://github.com/midusi/sign_language_datasets',
+    project_urls=PROJECT_URLS,
     packages=find_packages(),
     install_requires=REQUIRED_PACKAGES,
     #zip_safe=False,
