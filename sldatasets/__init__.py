@@ -1,6 +1,9 @@
+__version__ = "0.0.1"
+
 from sldatasets.lsa64 import LSA64
 import os
 from pathlib import Path
+
 
 # association between datasets_ids and loader classes
 datasets = {"lsa64": LSA64
@@ -22,3 +25,5 @@ def get(dataset_id, datasets_path=None, **kwargs):
     else:
         raise ValueError(
             f"Unknown dataset {dataset_id}. Valid options are {','.join(datasets.keys())}")
+
+
