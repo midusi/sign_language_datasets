@@ -27,3 +27,6 @@ def get(dataset_id, datasets_path=None, **kwargs):
             f"Unknown dataset {dataset_id}. Valid options are {','.join(datasets.keys())}")
 
 
+def positions_from(dataset, version):
+    import datasethandler as dh
+    return dh.DatasetHandler(version).get_humans_from_dataset(dataset)
