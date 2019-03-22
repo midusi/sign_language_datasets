@@ -1,5 +1,4 @@
-import os
-#import sys
+from os import mkdir, path as osp, listdir as osl
 from skvideo.io import vread
 from zipfile import ZipFile as zf
 from sldatasets.datasethandler import DatasetHandler as dh
@@ -15,11 +14,11 @@ class LSA64(object):
         self.base_url = self.x.get_my_url()
 
     def load_videos(self, path):
-        path_videos = os.path.join(path, self.x.get_my_folder())
+        path_videos = osp.join(path, self.x.get_my_folder())
         logging.info(f"Loading videos from {path_videos}")
-        files = sorted(os.listdir(path_videos))
-        for filename in (filter(lambda f: os.path.splitext(f)[1].endswith(f'{self.x.get_my_file_ext()}'), files)):
-            yield [vread(os.path.join(path_videos, filename)), filename]
+        files = sorted(osl(path_videos))
+        for filename in (filter(lambda f: osp.splitext(f)[1].endswith(f'{self.x.get_my_file_ext()}'), files)):
+            yield [vread(osp.join(path_videos, filename)), filename]
 
     def download_and_extract(self, path):
 
@@ -34,16 +33,33 @@ class LSA64(object):
 
     def download(self):
         r = gdown.download(self.x.get_my_url(), f'{mkdtemp()}', False)
-        return os.path.join(r, os.listdir(r)[0])
+        return osp.join(r, osl(r)[0])
 
     def load_data(self, datasets_path):
         # download dataset (if necessary)
 
         path = self.x.dataset_path(datasets_path)
-        if not os.path.exists(path):
-            os.mkdir(path)
+        if not osp.exists(path):
+            mkdir(path)
 
-        if not os.listdir(path):
+        if not osl(path):
             self.download_and_extract(path)
         # load video generator
         return self.load_videos(path)
+
+    def load_anotations(self, dpath=None):
+        import h5py
+        import numpy as np
+        data_dir = self.x.dataset_path(dpath)
+        mat_fname = osp.join(data_dir, 'lsa64_positions.mat')
+        mat_file = h5py.File(mat_fname, 'r')
+        db = mat_file.get('db')
+        it = db.keys().__iter__()
+        data = {}
+        for arr in it:
+            data[arr] = db[arr]
+        outfile = osp.join(data_dir, 'positions.npz')
+        # np.savez(outfile, **data)
+        # print('the file is saved in ', outfile)
+        # return outfile
+        return data

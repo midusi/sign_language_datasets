@@ -28,5 +28,15 @@ def get(dataset_id, datasets_path=None, **kwargs):
 
 
 def positions_from(dataset, version):
-    import datasethandler as dh
-    return dh.DatasetHandler(version).get_humans_from_dataset(dataset)
+    from sldatasets.datasethandler import DatasetHandler as dh
+    return dh(version).get_humans_from_dataset(dataset)
+
+
+def load_anotations(dataset_id="lsa64", dpath=None):
+    if dataset_id in datasets:
+        dataset_loader_class = datasets[dataset_id]
+        dataset_loader = dataset_loader_class("pre")
+        return dataset_loader.load_anotations(dpath)
+    else:
+        raise ValueError(
+            f"Unknown dataset {dataset_id}. Valid options are {','.join(datasets.keys())}")
