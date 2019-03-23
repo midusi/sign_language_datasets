@@ -56,10 +56,13 @@ class LSA64(object):
         db = mat_file.get('db')
         it = db.keys().__iter__()
         data = {}
-        for arr in it:
-            data[arr] = db[arr]
+        for key in it:
+            n = db[key].size
+            result = np.empty((n,), dtype=object)
+            for j in range(n):
+                result[j] = mat_file[db[key][j][0]][()]
+            data[key] = result
         outfile = osp.join(data_dir, 'positions.npz')
-        # np.savez(outfile, **data)
-        # print('the file is saved in ', outfile)
-        # return outfile
-        return data
+        np.savez(outfile, **data)
+        print('the file is saved in ', outfile)
+        return outfile
