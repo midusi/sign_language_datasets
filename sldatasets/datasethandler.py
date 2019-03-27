@@ -5,7 +5,7 @@ import os
 def process_video(video, e):
     n, h, w, c = video.shape
     frames = []
-    for j in range(0, n):
+    for j in range(0, 2):
         img = video[j, :]
         frames.append(e.inference(img, True, 4.0)[0])
     return frames
@@ -20,7 +20,8 @@ class DatasetHandler(object):
     def __init__(self, version):
         self.version = version
 
-    def dataset_path(self, root=None):
+    def get_my_path(self, root=None):
+        # if datasets_path was not specified, use default
         if root is None:
             root = self.get_lib_root()
         return os.path.join(root, self.version)
@@ -46,6 +47,15 @@ class DatasetHandler(object):
     def get_my_file_ext(self):
         raise NotImplementedError
 
+    def redux(self, files, index):
+        if index is not None:
+            return files[self.list_range(index-1)]
+        else:
+            return files
+
+    def list_range(self, index):
+        return slice(index*50, index*50+50)
+
     def get_humans_from_dataset(self, dataset, path=None):
         from tf_pose.estimator import TfPoseEstimator
         from tf_pose.networks import get_graph_path
@@ -53,9 +63,11 @@ class DatasetHandler(object):
         e = TfPoseEstimator(get_graph_path('cmu'), target_size=(432, 368))
         videos_processed = {}
         print('processing videos wait...')
-        for video in dataset:
-            videos_processed[video[1]] = process_video(video[0], e)
-        outfile = self.dataset_path() if path is None else path
+        # for video in dataset:
+        #     videos_processed[video[1]] = process_video(video[0], e)
+        video = dataset.__next__()
+        videos_processed[video[1]] = process_video(video[0], e)
+        outfile = self.get_my_path() if path is None else path
         outfile = os.path.join(outfile, 'dataset_humans.npz')
         np.savez(outfile, **videos_processed)
         print('the file is saved in ', outfile)
@@ -65,13 +77,13 @@ class DatasetHandler(object):
 class DH_Lsa64(DatasetHandler):
 
     def get_my_url(self):
-        if self.version == 'lsa64_raw':
+        if self.version == 'LSA64_raw':
             return 'https://drive.google.com/uc?id=1C7k_m2m4n5VzI4lljMoezc-uowDEgIUh'
         else:
             return 'https://drive.google.com/uc?id=18VuWBAxHaSBbO7wx57kQVre78FN7GYzQ'
 
     def get_my_folder(self):
-        if self.version == 'lsa64_raw':
+        if self.version == 'LSA64_raw':
             return 'all'
         else:
             return 'all_cut'
@@ -90,6 +102,9 @@ class DH_Lsa64_pre(DatasetHandler):
 
     def get_my_file_ext(self):
         return 'avi'
+
+    def list_range(self, index):
+        return slice(index*100, index*100+100)
 
 
 class DH_Test(DatasetHandler):

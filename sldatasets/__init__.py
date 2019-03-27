@@ -11,20 +11,9 @@ datasets = {"lsa64": LSA64
             }
 
 
-def get(dataset_id, datasets_path=None, **kwargs):
-
-    # if datasets_path was not specified, use default
-    if datasets_path == None:
-        datasets_path = os.path.join(Path.home(), '.lsdatasets')
-    os.makedirs(datasets_path, exist_ok=True)
-
-    if dataset_id in datasets:
-        dataset_loader_class = datasets[dataset_id]
-        dataset_loader = dataset_loader_class(**kwargs)
-        return dataset_loader.load_data(datasets_path)
-    else:
-        raise ValueError(
-            f"Unknown dataset {dataset_id}. Valid options are {','.join(datasets.keys())}")
+def get(dataset_id, **kwargs):
+    loader = get_loader(dataset_id, kwargs.get('version'), kwargs.get('path'))
+    return loader.load_data(kwargs.get('index'))
 
 
 def positions_from(dataset, version):
@@ -32,11 +21,14 @@ def positions_from(dataset, version):
     return dh(version).get_humans_from_dataset(dataset)
 
 
-def load_anotations(dataset_id="lsa64", dpath=None):
+def load_anotations(dataset_id="lsa64", **kwargs):
+    loader = get_loader(dataset_id, kwargs.get('version'), kwargs.get('path'))
+    return loader.load_anotations()
+
+
+def get_loader(dataset_id, version, dataset_path):
     if dataset_id in datasets:
-        dataset_loader_class = datasets[dataset_id]
-        dataset_loader = dataset_loader_class("pre")
-        return dataset_loader.load_anotations(dpath)
+        return datasets[dataset_id](version, dataset_path)
     else:
         raise ValueError(
             f"Unknown dataset {dataset_id}. Valid options are {','.join(datasets.keys())}")
