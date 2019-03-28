@@ -39,8 +39,11 @@ class LSA64(object):
 
     def load_data(self, index):
         # download dataset (if necessary)
-        if not osl(self.my_path):
+        if (self.my_path != self.x.get_my_path(None)) and not osl(self.my_path):
             self.download_and_extract()
+        elif not osp.exists(self.my_path):
+            self.download_and_extract()
+
         return self.load_videos(index)
 
     def load_anotations(self):
