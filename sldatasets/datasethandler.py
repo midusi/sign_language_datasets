@@ -5,7 +5,7 @@ import os
 def process_video(video, e):
     n, h, w, c = video.shape
     frames = []
-    for j in range(0, 2):
+    for j in range(0, n):
         img = video[j, :]
         frames.append(e.inference(img, True, 4.0)[0])
     return frames
@@ -63,9 +63,8 @@ class DatasetHandler(object):
         e = TfPoseEstimator(get_graph_path('cmu'), target_size=(432, 368))
         videos_processed = {}
         print('processing videos wait...')
-        # for video in dataset:
-        #     videos_processed[video[1]] = process_video(video[0], e)
-        video = dataset.__next__()
+        for video in dataset:
+            videos_processed[video[1]] = process_video(video[0], e)
         videos_processed[video[1]] = process_video(video[0], e)
         outfile = self.get_my_path() if path is None else path
         outfile = os.path.join(outfile, 'dataset_humans.npz')
