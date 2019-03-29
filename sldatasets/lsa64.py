@@ -23,13 +23,14 @@ class LSA64(object):
             yield [vread(osp.join(path_videos, filename)), filename]
 
     def download_and_extract(self):
-        makedirs(self.my_path, exist_ok=True)
+
         with zf(self.download()) as zip_ref:
 
             if zip_ref.testzip() is not None:
                 logging.warning("download was incomplete, try again")
             else:
                 logging.warning("Extracting videos...please wait...")
+                makedirs(self.my_path, exist_ok=True)
                 zip_ref.extractall(self.my_path)
                 zip_ref.close()
 
