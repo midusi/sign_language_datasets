@@ -15,7 +15,7 @@ class DatasetHandler(object):
     handler_class = {f'LSA64_raw': 'DH_Lsa64',
                      'LSA64_cut': 'DH_Lsa64',
                      'LSA64_pre': 'DH_Lsa64_pre',
-                     'LSA64_prueba': 'DH_Test'}
+                     }
 
     def __init__(self, version):
         self.version = version
@@ -48,13 +48,13 @@ class DatasetHandler(object):
         raise NotImplementedError
 
     def redux(self, files, index):
+        from os import path as osp
+        l = list(filter(lambda f: osp.splitext(f)[1].endswith(
+            f'{self.get_my_file_ext()}'), sorted(files)))
         if index is not None:
-            return files[self.list_range(index-1)]
+            return list(filter(lambda f: int(f.split('_')[0]) == index, l))
         else:
-            return files
-
-    def list_range(self, index):
-        return slice(index*50, index*50+50)
+            return l
 
     def get_humans_from_dataset(self, dataset, path=None):
         from tf_pose.estimator import TfPoseEstimator
@@ -101,18 +101,3 @@ class DH_Lsa64_pre(DatasetHandler):
 
     def get_my_file_ext(self):
         return 'avi'
-
-    def list_range(self, index):
-        return slice(index*100, index*100+100)
-
-
-class DH_Test(DatasetHandler):
-
-    def get_my_url(self):
-        return 'https://drive.google.com/uc?id=0B2PnuPB2APN5MDY3NTg2MzUtZGZhOS00YjAwLWJiZTktNGVjYWFjODBjMGQ3'
-
-    def get_my_folder(self):
-        return ''
-
-    def get_my_file_ext(self):
-        return 'docx'

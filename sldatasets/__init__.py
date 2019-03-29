@@ -32,3 +32,31 @@ def get_loader(dataset_id, version, dataset_path):
     else:
         raise ValueError(
             f"Unknown dataset {dataset_id}. Valid options are {','.join(datasets.keys())}")
+
+
+def walk_through_pre(video_tuple):
+    import numpy as np
+    import sldatasets as sld
+    npzfile = np.load(sld.load_anotations(version='pre'))
+    x = video_tuple[1].split('_')
+    index = (int(x[0])-1)*50+(int(x[1])-1)*5+int(x[2])-1
+    video = video_tuple[0]
+    n, h, w, c = video.shape
+    frames = []
+    for j in range(0, n):
+        frames.append(get_tuple(video[j, :], j, index, npzfile))
+    return (n for n in frames)
+
+
+def get_tuple(frame, j, index, npz):
+    tup = (frame,)
+    for key in npz.files:
+        anotation = npz[key][index]
+        if key.split('_').__contains__('exist'):
+            tup = tup + (anotation[j],)
+        elif key.split('_').__contains__('positions'):
+            tup = tup + (anotation[0][j],
+                         anotation[1][j])
+        else:
+            tup = tup + (anotation[0],)
+    return tup

@@ -17,9 +17,7 @@ class LSA64(object):
     def load_videos(self, index):
         path_videos = osp.join(self.my_path, self.x.get_my_folder())
         logging.info(f"Loading videos from {path_videos}")
-        files = list(filter(lambda f: osp.splitext(f)[1].endswith(
-            f'{self.x.get_my_file_ext()}'), sorted(osl(path_videos))))
-        for filename in self.x.redux(files, index):
+        for filename in self.x.redux(osl(path_videos), index):
             yield [vread(osp.join(path_videos, filename)), filename]
 
     def download_and_extract(self):
