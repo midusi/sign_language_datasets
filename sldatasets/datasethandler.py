@@ -27,7 +27,7 @@ class DatasetHandler(object):
         return os.path.join(root, self.version)
 
     def get_lib_root(self):
-        return os.path.join(Path.home(), '.lsdatasets')
+        return os.path.join(Path.home(), '.sldatasets')
 
     @staticmethod
     def factory(version):
