@@ -86,7 +86,6 @@ class DatasetHandler(object):
                 videos_processed[video[1]] = ie.args
                 print('the video ', video[1],
                       " couldn't be correctly processed")
-        videos_processed[video[1]] = process_video(video[0], e)
         outfile = self.get_my_path() if path is None else path
         outfile = os.path.join(outfile, 'dataset_humans.npz')
         np.savez(outfile, **videos_processed)
