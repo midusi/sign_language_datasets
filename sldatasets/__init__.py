@@ -1,13 +1,13 @@
 __version__ = "0.0.1"
 
-from sldatasets.lsa64 import LSA64
+from sldatasets.Datasetloader import LSA64, Boston
 import os
 from pathlib import Path
 
 
 # association between datasets_ids and loader classes
-datasets = {"lsa64": LSA64
-            # "boston":boston
+datasets = {"lsa64": LSA64,
+            "boston": Boston
             }
 
 
@@ -41,7 +41,7 @@ def walk_through_pre(video_tuple):
     x = video_tuple[1].split('_')
     index = (int(x[0])-1)*50+(int(x[1])-1)*5+int(x[2])-1
     video = video_tuple[0]
-    n, h, w, c = video.shape
+    n, _h, _w, _c = video.shape
     frames = []
     for j in range(0, n):
         frames.append(get_tuple(video[j, :], j, index, npzfile))

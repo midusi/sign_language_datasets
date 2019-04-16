@@ -3,18 +3,34 @@ import os
 
 
 def process_video(video, e):
-    n, h, w, c = video.shape
+
+    n, _h, _w, _c = video.shape
     frames = []
+    b = False
     for j in range(0, n):
         img = video[j, :]
-        frames.append(e.inference(img, True, 4.0)[0])
+        try:
+            frames.append(e.inference(img, True, 4.0)[0])
+        except:
+            print('error while trying inference on frame ', j)
+            from tf_pose.estimator import Human
+            frames.append(Human([]))
+            b = True
+    if b:
+        raise InferenceError(frames)
     return frames
+
+
+class InferenceError(Exception):
+    def __init__(self, arg):
+        self.args = arg
 
 
 class DatasetHandler(object):
     handler_class = {f'LSA64_raw': 'DH_Lsa64',
                      'LSA64_cut': 'DH_Lsa64',
                      'LSA64_pre': 'DH_Lsa64_pre',
+                     'Boston_pre': 'DH_Boston_pre'
                      }
 
     def __init__(self, version):
@@ -64,7 +80,12 @@ class DatasetHandler(object):
         videos_processed = {}
         print('processing videos wait...')
         for video in dataset:
-            videos_processed[video[1]] = process_video(video[0], e)
+            try:
+                videos_processed[video[1]] = process_video(video[0], e)
+            except InferenceError as ie:
+                videos_processed[video[1]] = ie.args
+                print('the video ', video[1],
+                      " couldn't be correctly processed")
         videos_processed[video[1]] = process_video(video[0], e)
         outfile = self.get_my_path() if path is None else path
         outfile = os.path.join(outfile, 'dataset_humans.npz')
@@ -101,3 +122,15 @@ class DH_Lsa64_pre(DatasetHandler):
 
     def get_my_file_ext(self):
         return 'avi'
+
+
+class DH_Boston_pre(DatasetHandler):
+
+    def get_my_url(self):
+        return 'http://csr.bu.edu/ftp/asl/asllvd/asl-data2/quicktime/'
+
+    def get_my_folder(self):
+        return
+
+    def get_my_file_ext(self):
+        return 'mov'
