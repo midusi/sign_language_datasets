@@ -1,4 +1,4 @@
-from os import makedirs, path as osp, listdir as osl
+from os import makedirs, path as osp, listdir as osl, remove
 import logging
 
 
@@ -30,9 +30,16 @@ class Datasetloader(object):
         import gdown
         from tempfile import mkdtemp
         dt = mkdtemp()
+        ref = osp.join(self.my_path, 'partial')
+        with open(ref, 'w') as flag_file:
         for url in self.x.get_my_url():
             r = gdown.download(url, dt, False)
-        return osp.join(r, osl(r)[0])
+            flag_file.write(osp.join(r, osl(r)[0]))
+            flag_file.write('\n')
+
+        ref = osp.join(self.my_path, 'downloaded')
+        # copy from paartial to dowloaded
+        flag_file.close()
 
 
 class LSA64(Datasetloader):
@@ -44,29 +51,41 @@ class LSA64(Datasetloader):
         for filename in self.x.redux(osl(path_videos), index):
             yield [vread(osp.join(path_videos, filename)), filename]
 
-    def download_and_extract(self):
-        from zipfile import ZipFile as zf
-        with zf(self.download()) as zip_ref:
+    def extract(self, ref):
+        from zipfile import ZipFile
+        with ZipFile(osp.join(ref, osl(ref)[0])) as zip_ref:
 
             if zip_ref.testzip() is not None:
-                logging.warning("download was incomplete, try again")
+                logging.warning(
+                    "download was incomplete or zipfile is corrupt, try again")
+                d_flag = osp.join(self.my_path, 'downloaded')
+                remove(d_flag)
             else:
                 logging.warning("Extracting videos...please wait...")
-                makedirs(self.my_path, exist_ok=True)
                 zip_ref.extractall(self.my_path)
                 zip_ref.close()
+                a = osp.join(self.my_path, 'extracted')
+                open(a, 'w').close()
 
     def download(self):
         import gdown
         from tempfile import mkdtemp
         r = gdown.download(self.x.get_my_url(), f'{mkdtemp()}', False)
-        return osp.join(r, osl(r)[0])
+        makedirs(self.my_path, exist_ok=True)
+        ref = osp.join(self.my_path, 'downloaded')
+        with open(ref, 'w') as flag_file:
+            flag_file.write(osp.join(r, osl(r)[0]))
+            flag_file.close()
 
     def check_path(self, index):
-        if (self.my_path != self.x.get_my_path(None)) and not osl(self.my_path):
-            self.download_and_extract()
-        elif not osp.exists(self.my_path):
-            self.download_and_extract()
+        d_flag = osp.join(self.my_path, 'downloaded')
+        e_flag = osp.join(self.my_path, 'extracted')
+        if not osp.exists(d_flag):
+            self.download()
+        elif not osp.exists(e_flag):
+            with open(d_flag, 'r') as ref:
+                self.extract(ref.readline())
+                ref.close()
 
     def load_anotations(self):
         import h5py
@@ -93,8 +112,14 @@ class LSA64(Datasetloader):
 class Boston(Datasetloader):
 
     def check_path(self, index):
-        word_path = osp.join(self.my_path, index)
-        if (self.my_path != self.x.get_my_path(None)) and not osp.exists(self.my_path):
-            raise NotADirectoryError
-        elif not osp.exists(word_path):
-            self.download(index)
+        d_flag = osp.join(self.my_path, 'downloaded')
+        e_flag = osp.join(self.my_path, 'extracted')
+        if not osp.exists(d_flag):
+            self.download()
+        elif not osp.exists(e_flag):
+            with open(d_flag, 'r') as ref:
+                array = ref.readlines()
+                for line in array:
+                    zipf = array[].split('\n')[0]
+                    self.extract(zipf)
+                ref.close()

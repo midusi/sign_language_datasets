@@ -9,12 +9,9 @@ def process_video(video, e):
     b = False
     for j in range(0, n):
         img = video[j, :]
-        try:
-            frames.append(e.inference(img, True, 4.0)[0])
-        except:
-            print('error while trying inference on frame ', j)
-            from tf_pose.estimator import Human
-            frames.append(Human([]))
+        humans = e.inference(img, True, 4.0)
+        frames.append(humans)
+        if humans != 1:
             b = True
     if b:
         raise InferenceError(frames)
