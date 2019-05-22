@@ -122,11 +122,26 @@ class DH_Lsa64_pre(DatasetHandler):
 
 class DH_Boston_pre(DatasetHandler):
 
-    def get_my_url(self):
-        return 'http://csr.bu.edu/ftp/asl/asllvd/asl-data2/quicktime/'
+    def __init__(self, version):
+        super().__init__(version)
+        filename = 'dai-asllvd-BU_glossing_with_variations_HS_information-extended-urls-RU.xlsx'
+        url = 'http://www.bu.edu/asllrp/' + filename
+        self.file_path = os.path.join(
+            self.get_my_path, filename)
+        if not os.path.exists(self.file_path):
+            import gdown
+            gdown.download(url, self.get_my_path, False)
 
-    def get_my_folder(self):
-        return
+    def get_my_url(self):
+        return 'http://secrets.rutgers.edu:8080/data/asl-ftp/asllvd/demos/verify_start_end_handshape_annotations//test_auto_move//signs_mov_separ_signers/'
 
     def get_my_file_ext(self):
         return 'mov'
+
+    def get_first(self):
+        # import pandas & extract first url from xlsx
+        return self.file_path
+
+    def get_urls(self):
+        # import pandas & extract all urls from xlsx
+        return []

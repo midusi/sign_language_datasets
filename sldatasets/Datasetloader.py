@@ -5,41 +5,26 @@ import logging
 class Datasetloader(object):
 
     def __init__(self, version="pre", root_path=None):
-        logging.info("starting loader")
         from sldatasets.datasethandler import DatasetHandler as dh
+        logging.info("starting loader")
         self.x = dh.factory(self.__class__.__name__ + '_' + version)
         self.base_url = self.x.get_my_url()
         self.my_path = self.x.get_my_path(root_path)
 
     def load_data(self, index):
-        # download dataset (if necessary)
-        self.check_path(index)
-
+        self.check_path()
         return self.load_videos(index)
 
-    def check_path(self, index):
-        pass
-
-    def download_and_extract(self):
-        pass
+    def check_path(self):
+        d_flag = osp.join(self.my_path, 'downloaded')
+        if not osp.exists(d_flag):
+            self.download()
 
     def load_videos(self, index):
         pass
 
-    def download(self, index):
-        import gdown
-        from tempfile import mkdtemp
-        dt = mkdtemp()
-        ref = osp.join(self.my_path, 'partial')
-        with open(ref, 'w') as flag_file:
-        for url in self.x.get_my_url():
-            r = gdown.download(url, dt, False)
-            flag_file.write(osp.join(r, osl(r)[0]))
-            flag_file.write('\n')
-
-        ref = osp.join(self.my_path, 'downloaded')
-        # copy from paartial to dowloaded
-        flag_file.close()
+    def download(self):
+        makedirs(self.my_path, exist_ok=True)
 
 
 class LSA64(Datasetloader):
@@ -51,9 +36,12 @@ class LSA64(Datasetloader):
         for filename in self.x.redux(osl(path_videos), index):
             yield [vread(osp.join(path_videos, filename)), filename]
 
-    def extract(self, ref):
+    def extract(self):
         from zipfile import ZipFile
-        with ZipFile(osp.join(ref, osl(ref)[0])) as zip_ref:
+        ref = (filter(lambda f: osp.splitext(
+            f)[1].endswith('.zip'), osl(self.my_path))).__next__()
+
+        with ZipFile(osp.join(self.my_path, ref)) as zip_ref:
 
             if zip_ref.testzip() is not None:
                 logging.warning(
@@ -68,58 +56,62 @@ class LSA64(Datasetloader):
                 open(a, 'w').close()
 
     def download(self):
+        super().download()
         import gdown
-        from tempfile import mkdtemp
-        r = gdown.download(self.x.get_my_url(), f'{mkdtemp()}', False)
-        makedirs(self.my_path, exist_ok=True)
-        ref = osp.join(self.my_path, 'downloaded')
-        with open(ref, 'w') as flag_file:
-            flag_file.write(osp.join(r, osl(r)[0]))
-            flag_file.close()
+        gdown.download(self.x.get_my_url(), f'{self.my_path()}', False)
+        flag = osp.join(self.my_path, 'downloaded')
+        open(flag, 'w').close()
 
-    def check_path(self, index):
-        d_flag = osp.join(self.my_path, 'downloaded')
+    def check_path(self):
+        super().check_path()
         e_flag = osp.join(self.my_path, 'extracted')
-        if not osp.exists(d_flag):
-            self.download()
-        elif not osp.exists(e_flag):
-            with open(d_flag, 'r') as ref:
-                self.extract(ref.readline())
-                ref.close()
+        if not osp.exists(e_flag):
+            self.extract()
 
     def load_anotations(self):
-        import h5py
-        import numpy as np
-        data_dir = self.my_path
-        outfile = osp.join(data_dir, 'positions.npz')
+        outfile = osp.join(self.my_path, 'positions.npz')
         if not osp.exists(outfile):
-            mat_fname = osp.join(data_dir, 'lsa64_positions.mat')
-            mat_file = h5py.File(mat_fname, 'r')
-            db = mat_file.get('db')
-            it = db.keys().__iter__()
-            data = {}
-            for key in it:
-                n = db[key].size
-                result = np.empty((n,), dtype=object)
-                for j in range(n):
-                    result[j] = mat_file[db[key][j][0]][()]
-                data[key] = result
-            np.savez(outfile, **data)
+            self.make_npz(outfile)
         print('the file is saved in ', outfile)
         return outfile
+
+    def make_npz(self, outfile):
+        import numpy as np
+        import h5py
+        mat_fname = osp.join(self.my_path, 'lsa64_positions.mat')
+        mat_file = h5py.File(mat_fname, 'r')
+        db = mat_file.get('db')
+        it = db.keys().__iter__()
+        data = {}
+        for key in it:
+            n = db[key].size
+            result = np.empty((n,), dtype=object)
+            for j in range(n):
+                result[j] = mat_file[db[key][j][0]][()]
+            data[key] = result
+        np.savez(outfile, **data)
 
 
 class Boston(Datasetloader):
 
-    def check_path(self, index):
-        d_flag = osp.join(self.my_path, 'downloaded')
-        e_flag = osp.join(self.my_path, 'extracted')
-        if not osp.exists(d_flag):
-            self.download()
-        elif not osp.exists(e_flag):
-            with open(d_flag, 'r') as ref:
-                array = ref.readlines()
-                for line in array:
-                    zipf = array[].split('\n')[0]
-                    self.extract(zipf)
-                ref.close()
+    def download(self):
+        super().download()
+        import gdown
+        partial = osp.join(self.my_path, 'partial')
+        last = self.x.get_first()
+        if osp.exists(partial):
+            with open(partial, 'r') as files_downloaded:
+                last = self.x.get_my_url() + \
+                    files_downloaded.readlines()[-1].split('\n')[0]
+                files_downloaded.close()
+        with open(partial, 'a') as flag_file:
+            l = self.x.get_urls()
+            i = l.index(last)
+            for url in l[i:]:
+                p = gdown.download(url, self.my_path, False)
+                flag_file.write(p.split('/')[-1])
+                flag_file.write('\n')
+
+        ref = osp.join(self.my_path, 'downloaded')
+        # copy from paartial to dowloaded
+        flag_file.close()
