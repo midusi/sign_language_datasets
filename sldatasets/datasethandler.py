@@ -75,15 +75,20 @@ class DatasetHandler(object):
         import numpy as np
         e = TfPoseEstimator(get_graph_path('cmu'), target_size=(432, 368))
         videos_processed = {}
+        outfile = self.get_my_path() if path is None else path
         print('processing videos wait...')
         for video in dataset:
             try:
                 videos_processed[video[1]] = process_video(video[0], e)
             except InferenceError as ie:
                 videos_processed[video[1]] = ie.args
-                print('the video ', video[1],
-                      " couldn't be correctly processed")
-        outfile = self.get_my_path() if path is None else path
+                with open(os.path.join(outfile, 'processing.log'), 'a') as log:
+                    log.write('the video ',
+                              video[1], " couldn't be correctly processed, frames done: ", f'{len(ie.args)}')
+                    log.write('\n')
+                    log.close()
+                    print('the video ', video[1],
+                          " couldn't be correctly processed. processing videos wait...")
         outfile = os.path.join(outfile, 'dataset_humans.npz')
         np.savez(outfile, **videos_processed)
         print('the file is saved in ', outfile)
