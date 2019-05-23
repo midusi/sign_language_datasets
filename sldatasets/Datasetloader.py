@@ -1,4 +1,4 @@
-from os import makedirs, path as osp, listdir as osl, remove
+from os import makedirs, path as osp, listdir as osl, remove, rename
 import logging
 
 
@@ -111,7 +111,6 @@ class Boston(Datasetloader):
                 p = gdown.download(url, self.my_path, False)
                 flag_file.write(p.split('/')[-1])
                 flag_file.write('\n')
-
-        ref = osp.join(self.my_path, 'downloaded')
-        # copy from paartial to dowloaded
         flag_file.close()
+        ref = osp.join(self.my_path, 'downloaded')
+        rename(partial, ref)

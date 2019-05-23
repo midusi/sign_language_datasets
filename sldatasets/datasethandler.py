@@ -139,9 +139,18 @@ class DH_Boston_pre(DatasetHandler):
         return 'mov'
 
     def get_first(self):
-        # import pandas & extract first url from xlsx
-        return self.file_path
+        import openpyxl as pyxl
+        wb = pyxl.load_workbook(self.file_path)
+        ws = wb['Sheet1']
+        # extract first url from xlsx
+        return ws.cell(row=4, column=12).value.split('"')[1]
 
     def get_urls(self):
-        # import pandas & extract all urls from xlsx
-        return []
+        import openpyxl as pyx
+        wb = openpyxl.load_workbook(self.file_path)
+        ws = wb['Sheet1']
+        urls = []
+        for val in ws['L']:
+            urls.append(val.value.split('"')[1])
+
+        return urls
