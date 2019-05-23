@@ -58,7 +58,7 @@ class LSA64(Datasetloader):
     def download(self):
         super().download()
         import gdown
-        gdown.download(self.x.get_my_url(), f'{self.my_path()}', False)
+        gdown.download(self.x.get_my_url(), self.my_path, False)
         flag = osp.join(self.my_path, 'downloaded')
         open(flag, 'w').close()
 

@@ -11,7 +11,7 @@ def process_video(video, e):
         img = video[j, :]
         humans = e.inference(img, True, 4.0)
         frames.append(humans)
-        if humans != 1:
+        if len(humans) != 1:
             b = True
     if b:
         raise InferenceError(frames)
@@ -82,17 +82,29 @@ class DatasetHandler(object):
                 videos_processed[video[1]] = process_video(video[0], e)
             except InferenceError as ie:
                 videos_processed[video[1]] = ie.args
-                with open(os.path.join(outfile, 'processing.log'), 'a') as log:
-                    log.write('the video ',
-                              video[1], " couldn't be correctly processed, frames done: ", f'{len(ie.args)}')
-                    log.write('\n')
-                    log.close()
-                    print('the video ', video[1],
-                          " couldn't be correctly processed. processing videos wait...")
+                self.error_handle(ie.args, outfile, video[1])
         outfile = os.path.join(outfile, 'dataset_humans.npz')
         np.savez(outfile, **videos_processed)
         print('the file is saved in ', outfile)
         return outfile
+
+    def frames_failed(self, frames):
+        index_list = []
+        for idx, f in enumerate(frames):
+            if len(f) != 1:
+                index_list.append(str(idx))
+        return index_list
+
+    def error_handle(self, frames, path, video_name):
+        with open(os.path.join(path, 'processing.log'), 'a') as log:
+            log.write('the video ' +
+                      video_name + " couldn't be correctly processed, frames failed: ")
+            for v in self.frames_failed(frames):
+                log.write(v + ' ')
+            log.write('\n')
+            log.close()
+            print('the video ', video_name,
+                  " couldn't be correctly processed. processing videos wait...")
 
 
 class DH_Lsa64(DatasetHandler):
