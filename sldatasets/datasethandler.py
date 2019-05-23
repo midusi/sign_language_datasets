@@ -146,8 +146,8 @@ class DH_Boston_pre(DatasetHandler):
         return ws.cell(row=4, column=12).value.split('"')[1]
 
     def get_urls(self):
-        import openpyxl as pyx
-        wb = openpyxl.load_workbook(self.file_path)
+        import openpyxl as pyxl
+        wb = pyxl.load_workbook(self.file_path)
         ws = wb['Sheet1']
         urls = []
         for val in ws['L']:
