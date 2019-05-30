@@ -4,9 +4,10 @@ import logging
 
 class Datasetloader(object):
 
-    def __init__(self, version="pre", root_path=None):
+    def __init__(self, version=None, root_path=None):
         from sldatasets.datasethandler import DatasetHandler as dh
         logging.info("starting loader")
+        version = 'pre' if version is None else version
         self.x = dh.factory(self.__class__.__name__ + '_' + version)
         self.base_url = self.x.get_my_url()
         self.my_path = self.x.get_my_path(root_path)
@@ -34,12 +35,12 @@ class LSA64(Datasetloader):
         path_videos = osp.join(self.my_path, self.x.get_my_folder())
         logging.info(f"Loading videos from {path_videos}")
         for filename in self.x.redux(osl(path_videos), index):
-            yield [vread(osp.join(path_videos, filename)), filename]
+            yield [vread(osp.join(path_videos, filename)), self.x.parsed_name(filename)]
 
     def extract(self):
         from zipfile import ZipFile
-        ref = (filter(lambda f: osp.splitext(
-            f)[1].endswith('.zip'), osl(self.my_path))).__next__()
+        ref = (filter(lambda f: f == self.x.version +
+                      '.zip', osl(self.my_path))).__next__()
 
         with ZipFile(osp.join(self.my_path, ref)) as zip_ref:
 
@@ -58,7 +59,8 @@ class LSA64(Datasetloader):
     def download(self):
         super().download()
         import gdown
-        gdown.download(self.x.get_my_url(), self.my_path, False)
+        gdown.download(self.x.get_my_url(), osp.join(
+            self.my_path, self.x.version + '.zip'), False)
         flag = osp.join(self.my_path, 'downloaded')
         open(flag, 'w').close()
 
@@ -98,19 +100,28 @@ class Boston(Datasetloader):
         super().download()
         import gdown
         partial = osp.join(self.my_path, 'partial')
-        last = self.x.get_first()
+        last = self.x.get_first(self.my_path)
         if osp.exists(partial):
             with open(partial, 'r') as files_downloaded:
-                last = self.x.get_my_url() + \
-                    files_downloaded.readlines()[-1].split('\n')[0]
+                m = files_downloaded.readlines()
                 files_downloaded.close()
+            if m:
+                last = self.x.get_my_url() + m[-1].split('\n')[0]
         with open(partial, 'a') as flag_file:
             l = self.x.get_urls()
             i = l.index(last)
+            if m:
+                i = i+1
             for url in l[i:]:
-                p = gdown.download(url, self.my_path, False)
-                flag_file.write(p.split('/')[-1])
-                flag_file.write('\n')
-        flag_file.close()
+                filename = url.split('/')[-1]
+                gdown.download(url, osp.join(self.my_path, filename), False)
+                flag_file.write(filename + '\n')
+            flag_file.close()
         ref = osp.join(self.my_path, 'downloaded')
         rename(partial, ref)
+
+    def load_videos(self, index):
+        from skvideo.io import vread
+        logging.info(f"Loading videos from {self.my_path}")
+        for filename in self.x.redux(osl(self.my_path), index):
+            yield [vread(osp.join(self.my_path, filename)), self.x.parsed_name(filename)]

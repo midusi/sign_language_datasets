@@ -1,5 +1,5 @@
 from pathlib import Path
-import os
+from os import path as osp, rename
 
 
 def process_video(video, e):
@@ -37,10 +37,10 @@ class DatasetHandler(object):
         # if datasets_path was not specified, use default
         if root is None:
             root = self.get_lib_root()
-        return os.path.join(root, self.version)
+        return osp.join(root, self.version)
 
     def get_lib_root(self):
-        return os.path.join(Path.home(), '.sldatasets')
+        return osp.join(Path.home(), '.sldatasets')
 
     @staticmethod
     def factory(version):
@@ -61,13 +61,22 @@ class DatasetHandler(object):
         raise NotImplementedError
 
     def redux(self, files, index):
-        from os import path as osp
         l = list(filter(lambda f: osp.splitext(f)[1].endswith(
             f'{self.get_my_file_ext()}'), sorted(files)))
         if index is not None:
             return list(filter(lambda f: int(f.split('_')[0]) == index, l))
         else:
             return l
+
+    def parsed_name(self, filename):
+        val = filename.split('_')
+        return {'class': self.sign_class(val), 'consultant': self.consultant(val)}
+
+    def sign_class(self, parsed):
+        return parsed[0]
+
+    def consultant(self, parsed):
+        return parsed[1]
 
     def get_humans_from_dataset(self, dataset, path=None):
         from tf_pose.estimator import TfPoseEstimator
@@ -83,7 +92,7 @@ class DatasetHandler(object):
             except InferenceError as ie:
                 videos_processed[video[1]] = ie.args
                 self.error_handle(ie.args, outfile, video[1])
-        outfile = os.path.join(outfile, 'dataset_humans.npz')
+        outfile = osp.join(outfile, 'dataset_humans.npz')
         np.savez(outfile, **videos_processed)
         print('the file is saved in ', outfile)
         return outfile
@@ -96,7 +105,7 @@ class DatasetHandler(object):
         return index_list
 
     def error_handle(self, frames, path, video_name):
-        with open(os.path.join(path, 'processing.log'), 'a') as log:
+        with open(osp.join(path, 'processing.log'), 'a') as log:
             log.write('the video ' +
                       video_name + " couldn't be correctly processed, frames failed: ")
             for v in self.frames_failed(frames):
@@ -124,6 +133,11 @@ class DH_Lsa64(DatasetHandler):
     def get_my_file_ext(self):
         return 'mp4'
 
+    def parsed_name(self, filename):
+        d = super().parsed_name(filename)
+        d['repetition'] = filename.split('_')[2].split('.')[0]
+        return d
+
 
 class DH_Lsa64_pre(DatasetHandler):
 
@@ -136,27 +150,32 @@ class DH_Lsa64_pre(DatasetHandler):
     def get_my_file_ext(self):
         return 'avi'
 
+    def parsed_name(self, filename):
+        d = super().parsed_name(filename)
+        v = filename.split('_')
+        d['repetition'] = v[2]
+        d['hand'] = v[3].split('.')[0]
+        return d
+
 
 class DH_Boston_pre(DatasetHandler):
 
-    def __init__(self, version):
-        super().__init__(version)
-        filename = 'dai-asllvd-BU_glossing_with_variations_HS_information-extended-urls-RU.xlsx'
-        url = 'http://www.bu.edu/asllrp/' + filename
-        self.file_path = os.path.join(
-            self.get_my_path, filename)
-        if not os.path.exists(self.file_path):
-            import gdown
-            gdown.download(url, self.get_my_path, False)
-
     def get_my_url(self):
-        return 'http://secrets.rutgers.edu:8080/data/asl-ftp/asllvd/demos/verify_start_end_handshape_annotations//test_auto_move//signs_mov_separ_signers/'
+        return 'http://csr.bu.edu/ftp/asl/asllvd/demos/verify_start_end_handshape_annotations//test_auto_move//signs_mov_separ_signers/'
 
     def get_my_file_ext(self):
         return 'mov'
 
-    def get_first(self):
+    def get_first(self, path):
         import openpyxl as pyxl
+        url = 'http://www.bu.edu/asllrp/dai-asllvd-BU_glossing_with_variations_HS_information-extended-urls-RU.xlsx'
+        self.file_path = osp.join(path, 'index_boston.xlsx')
+        if not osp.exists(self.file_path):
+            import requests
+            resp = requests.get(url)
+            with open(self.file_path, 'wb') as f:
+                f.write(resp.content)
+                f.close()
         wb = pyxl.load_workbook(self.file_path)
         ws = wb['Sheet1']
         # extract first url from xlsx
@@ -167,7 +186,12 @@ class DH_Boston_pre(DatasetHandler):
         wb = pyxl.load_workbook(self.file_path)
         ws = wb['Sheet1']
         urls = []
-        for val in ws['L']:
+        for val in filter(lambda cel: cel.value.startswith('=H'), ws['L']):
             urls.append(val.value.split('"')[1])
-
         return urls
+
+    def sign_class(self, parsed):
+        return parsed[1].split('.')[0]
+
+    def consultant(self, parsed):
+        return parsed[0]
