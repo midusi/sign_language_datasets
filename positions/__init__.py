@@ -35,7 +35,9 @@ def get_humans_from_dataset(dataset, path=None):
     print('processing videos wait...')
     for video in dataset:
         try:
-            videos_processed[video[1]] = process_video(video[0], e)
+            video_name = video[1]['class']+'_' + \
+                video[1]['consultant']+'_'+video[1]['repetition']
+            videos_processed[video_name] = process_video(video[0], e)
         except InferenceError as ie:
             videos_processed[video[1]] = ie.args
             error_handle(ie.args, outfile, video[1])
