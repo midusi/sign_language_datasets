@@ -1,6 +1,7 @@
 __version__ = "0.0.1"
 
 from sldatasets.Datasetloader import LSA64, Boston
+from sldatasets.video_dataset import Videodataset
 import os
 from pathlib import Path
 
@@ -12,13 +13,7 @@ datasets = {"lsa64": LSA64,
 
 
 def get(dataset_id, **kwargs):
-    loader = get_loader(dataset_id, kwargs.get('version'), kwargs.get('path'))
-    return loader.load_data(kwargs.get('index'))
-
-
-def positions_from(dataset, version):
-    from sldatasets.datasethandler import DatasetHandler as dh
-    return dh(version).get_humans_from_dataset(dataset)
+    return Videodataset(dataset_id, **kwargs)
 
 
 def load_anotations(dataset_id="lsa64", **kwargs):

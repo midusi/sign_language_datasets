@@ -12,30 +12,29 @@ class Datasetloader(object):
         self.base_url = self.x.get_my_url()
         self.my_path = self.x.get_my_path(root_path)
 
-    def load_data(self, index):
+    def load_data(self, **kwargs):
         self.check_path()
-        return self.load_videos(index)
+        return self.load_videos(self.path_videos(), **kwargs)
 
     def check_path(self):
         d_flag = osp.join(self.my_path, 'downloaded')
         if not osp.exists(d_flag):
             self.download()
 
-    def load_videos(self, index):
-        pass
+    def load_videos(self, path_videos, **kwargs):
+        from skvideo.io import vread
+        logging.info(f"Loading videos from {path_videos}")
+        for filename in self.x.redux(osl(path_videos), **kwargs):
+            yield [vread(osp.join(path_videos, filename)), self.x.parsed_name(filename)]
 
     def download(self):
         makedirs(self.my_path, exist_ok=True)
 
+    def path_videos(self):
+        pass
+
 
 class LSA64(Datasetloader):
-
-    def load_videos(self, index):
-        from skvideo.io import vread
-        path_videos = osp.join(self.my_path, self.x.get_my_folder())
-        logging.info(f"Loading videos from {path_videos}")
-        for filename in self.x.redux(osl(path_videos), index):
-            yield [vread(osp.join(path_videos, filename)), self.x.parsed_name(filename)]
 
     def extract(self):
         from zipfile import ZipFile
@@ -56,6 +55,9 @@ class LSA64(Datasetloader):
                 a = osp.join(self.my_path, 'extracted')
                 open(a, 'w').close()
 
+    def path_videos(self):
+        return osp.join(self.my_path, self.x.get_my_folder())
+
     def download(self):
         super().download()
         import gdown
@@ -71,27 +73,8 @@ class LSA64(Datasetloader):
             self.extract()
 
     def load_anotations(self):
-        outfile = osp.join(self.my_path, 'positions.npz')
-        if not osp.exists(outfile):
-            self.make_npz(outfile)
-        print('the file is saved in ', outfile)
+        outfile = osp.join(self.x.get_my_path(None), 'positions.npz')
         return outfile
-
-    def make_npz(self, outfile):
-        import numpy as np
-        import h5py
-        mat_fname = osp.join(self.my_path, 'lsa64_positions.mat')
-        mat_file = h5py.File(mat_fname, 'r')
-        db = mat_file.get('db')
-        it = db.keys().__iter__()
-        data = {}
-        for key in it:
-            n = db[key].size
-            result = np.empty((n,), dtype=object)
-            for j in range(n):
-                result[j] = mat_file[db[key][j][0]][()]
-            data[key] = result
-        np.savez(outfile, **data)
 
 
 class Boston(Datasetloader):
@@ -120,8 +103,5 @@ class Boston(Datasetloader):
         ref = osp.join(self.my_path, 'downloaded')
         rename(partial, ref)
 
-    def load_videos(self, index):
-        from skvideo.io import vread
-        logging.info(f"Loading videos from {self.my_path}")
-        for filename in self.x.redux(osl(self.my_path), index):
-            yield [vread(osp.join(self.my_path, filename)), self.x.parsed_name(filename)]
+    def path_videos(self):
+        return self.my_path

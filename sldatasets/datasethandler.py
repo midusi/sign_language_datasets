@@ -2,27 +2,6 @@ from pathlib import Path
 from os import path as osp, rename
 
 
-def process_video(video, e):
-
-    n, _h, _w, _c = video.shape
-    frames = []
-    b = False
-    for j in range(0, n):
-        img = video[j, :]
-        humans = e.inference(img, True, 4.0)
-        frames.append(humans)
-        if len(humans) != 1:
-            b = True
-    if b:
-        raise InferenceError(frames)
-    return frames
-
-
-class InferenceError(Exception):
-    def __init__(self, arg):
-        self.args = arg
-
-
 class DatasetHandler(object):
     handler_class = {f'LSA64_raw': 'DH_Lsa64',
                      'LSA64_cut': 'DH_Lsa64',
@@ -60,13 +39,18 @@ class DatasetHandler(object):
     def get_my_file_ext(self):
         raise NotImplementedError
 
-    def redux(self, files, index):
+    def redux(self, files, **kwargs):
         l = list(filter(lambda f: osp.splitext(f)[1].endswith(
             f'{self.get_my_file_ext()}'), sorted(files)))
-        if index is not None:
-            return list(filter(lambda f: int(f.split('_')[0]) == index, l))
-        else:
-            return l
+
+        def file_filter(self, f, clas, consultant, repetition):
+            name = self.parsed_name(f)
+            return ((int(name['class']) == int(clas) if clas else True) and
+                    (int(name['consultant']) == consultant if consultant else True) and
+                    (int(name['repetition']) == repetition if repetition else True))
+        l = list(filter(lambda f: file_filter(
+            self, f, kwargs.get('index'), kwargs.get('consultant'), kwargs.get('repetition')), l))
+        return l
 
     def parsed_name(self, filename):
         val = filename.split('_')
@@ -77,43 +61,6 @@ class DatasetHandler(object):
 
     def consultant(self, parsed):
         return parsed[1]
-
-    def get_humans_from_dataset(self, dataset, path=None):
-        from tf_pose.estimator import TfPoseEstimator
-        from tf_pose.networks import get_graph_path
-        import numpy as np
-        e = TfPoseEstimator(get_graph_path('cmu'), target_size=(432, 368))
-        videos_processed = {}
-        outfile = self.get_my_path() if path is None else path
-        print('processing videos wait...')
-        for video in dataset:
-            try:
-                videos_processed[video[1]] = process_video(video[0], e)
-            except InferenceError as ie:
-                videos_processed[video[1]] = ie.args
-                self.error_handle(ie.args, outfile, video[1])
-        outfile = osp.join(outfile, 'dataset_humans.npz')
-        np.savez(outfile, **videos_processed)
-        print('the file is saved in ', outfile)
-        return outfile
-
-    def frames_failed(self, frames):
-        index_list = []
-        for idx, f in enumerate(frames):
-            if len(f) != 1:
-                index_list.append(str(idx))
-        return index_list
-
-    def error_handle(self, frames, path, video_name):
-        with open(osp.join(path, 'processing.log'), 'a') as log:
-            log.write('the video ' +
-                      video_name + " couldn't be correctly processed, frames failed: ")
-            for v in self.frames_failed(frames):
-                log.write(v + ' ')
-            log.write('\n')
-            log.close()
-            print('the video ', video_name,
-                  " couldn't be correctly processed. processing videos wait...")
 
 
 class DH_Lsa64(DatasetHandler):
