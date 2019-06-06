@@ -33,6 +33,15 @@ class Datasetloader(object):
     def path_videos(self):
         pass
 
+    def get_summary(self):
+        c = self.x.word_count(osl(self.path_videos()))
+        return {'name': self.__class__.__name__,
+                'version': self.x.version,
+                'link': self.x.get_my_url(),
+                'words': c[0],
+                'subjects': c[1],
+                'repetitions': c[2]}
+
 
 class LSA64(Datasetloader):
 

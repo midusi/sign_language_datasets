@@ -8,9 +8,9 @@ datasets = {"lsa64": LSA64,
 class Videodataset(Generator):
 
     def __init__(self, dataset_id, **kwargs):
-        loader = self.get_loader(dataset_id, kwargs.get(
+        self.loader = self.get_loader(dataset_id, kwargs.get(
             'version'), kwargs.get('path'))
-        self.data = loader.load_data(**kwargs)
+        self.data = self.loader.load_data(**kwargs)
 
     def send(self, ignored_arg):
         try:
@@ -27,3 +27,6 @@ class Videodataset(Generator):
         else:
             raise ValueError(
                 f"Unknown dataset {dataset_id}. Valid options are {','.join(datasets.keys())}")
+
+    def summary(self):
+        print(self.loader.get_summary())

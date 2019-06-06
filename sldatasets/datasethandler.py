@@ -62,6 +62,20 @@ class DatasetHandler(object):
     def consultant(self, parsed):
         return parsed[1]
 
+    def word_count(self, videos_list):
+        class_s = set([])
+        consultant_s = set([])
+        repetition_s = set([])
+        for video in filter(lambda f: osp.splitext(f)[1].endswith(f'{self.get_my_file_ext()}'), videos_list):
+            d = self.parsed_name(video)
+            class_s.add(d['class'])
+            consultant_s.add(d['consultant'])
+            self.add_rep(repetition_s, d)
+        return [len(class_s), len(consultant_s), len(repetition_s)]
+
+    def add_rep(self, repetition_s, d):
+        repetition_s.add(d['repetition'])
+
 
 class DH_Lsa64(DatasetHandler):
 
@@ -142,3 +156,6 @@ class DH_Boston_pre(DatasetHandler):
 
     def consultant(self, parsed):
         return parsed[0]
+
+    def add_rep(self, repetition_s, d):
+        repetition_s.add(None)
