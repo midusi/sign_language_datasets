@@ -34,12 +34,12 @@ def get_humans_from_dataset(dataset, path=None):
     outfile = osp.curdir() if path is None else path
     print('processing videos wait...')
     for video in dataset:
+        video_name = video[1]['class']+'_' + \
+            video[1]['consultant']+'_'+video[1]['repetition']
         try:
-            video_name = video[1]['class']+'_' + \
-                video[1]['consultant']+'_'+video[1]['repetition']
             videos_processed[video_name] = process_video(video[0], e)
         except InferenceError as ie:
-            videos_processed[video[1]] = ie.args
+            videos_processed[video_name] = ie.args
             error_handle(ie.args, outfile, video[1])
     outfile = osp.join(outfile, 'dataset_humans.npz')
     np.savez(outfile, **videos_processed)
