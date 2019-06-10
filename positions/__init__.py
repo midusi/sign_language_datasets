@@ -40,7 +40,7 @@ def get_humans_from_dataset(dataset, path=None):
             videos_processed[video_name] = process_video(video[0], e)
         except InferenceError as ie:
             videos_processed[video_name] = ie.args
-            error_handle(ie.args, outfile, video[1])
+            error_handle(ie.args, outfile, video_name)
     outfile = osp.join(outfile, 'dataset_humans.npz')
     np.savez(outfile, **videos_processed)
     print('the file is saved in ', outfile)
