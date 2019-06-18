@@ -84,3 +84,27 @@ def process_video(video, e):
 class InferenceError(Exception):
     def __init__(self, arg):
         self.args = arg
+
+
+def translate_tf_pose_humans(npz_file):
+    from sldatasets.body import Human
+    npz = np.load(npz_file)
+    data = {}
+    for video in npz.files:
+        video_annotation = npz[video]
+        n = video_annotation.size
+        result = np.empty((n,), dtype=object)
+        for i, frame_annotation in enumerate(video_annotation):
+            h = Human([])
+            try:
+                human = frame_annotation[0]
+                h.body_parts = human.body_parts
+                h.score = human.score
+            except:
+                print('frame', str(i), ' of video ', video,
+                      " has no annotations. processing videos wait...")
+            result[i] = h
+        data[video] = result
+    outfile = osp.join(osp.dirname(npz_file), 'positions.npz')
+    np.savez(outfile, **data)
+    return outfile

@@ -82,8 +82,13 @@ class LSA64(Datasetloader):
             self.extract()
 
     def load_anotations(self):
-        outfile = osp.join(self.x.get_my_path(None), 'positions.npz')
-        return outfile
+        import numpy as np
+        outfile = osp.join(self.my_path, 'positions.npz')
+        if not osp.exists(outfile):
+            from gdown import download
+            logging.info(f"Dowloading Positions to {outfile}")
+            download(self.x.get_pos_url(), outfile, quiet=False)
+        return np.load(outfile)
 
 
 class Boston(Datasetloader):

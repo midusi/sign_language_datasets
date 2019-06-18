@@ -76,6 +76,9 @@ class DatasetHandler(object):
     def add_rep(self, repetition_s, d):
         repetition_s.add(d['repetition'])
 
+    def get_pos_url(self):
+        pass
+
 
 class DH_Lsa64(DatasetHandler):
 
@@ -84,6 +87,12 @@ class DH_Lsa64(DatasetHandler):
             return 'https://drive.google.com/uc?id=1C7k_m2m4n5VzI4lljMoezc-uowDEgIUh'
         else:
             return 'https://drive.google.com/uc?id=18VuWBAxHaSBbO7wx57kQVre78FN7GYzQ'
+
+    def get_pos_url(self):
+        if self.version == 'LSA64_raw':
+            return 'https://'
+        else:
+            return 'https://drive.google.com/uc?id=1_byVg8q_GmfPvHps5irGRikEfeuYo5-r&'
 
     def get_my_folder(self):
         if self.version == 'LSA64_raw':
