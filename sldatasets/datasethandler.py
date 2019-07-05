@@ -176,12 +176,18 @@ class DH_Boston_pre(DatasetHandler):
     def extract_signs_from(self, scene_path):
         from skvideo.io import vread
         import pandas as pd
+        import openpyxl as pyxl
+        wb = pyxl.load_workbook(self.dai_path)
+        ws = wb['Sheet1']
+        data=ws.values
+        columns = next(data)[0:]
+        df = pd.DataFrame(data, columns=columns)        
         session, filename = scene_path.split('/')[-2:]
-        num=int(filename.split('-')[0][-1])
-        df = pd.read_excel(self.dai_path, usecols="C,D,M,N,O,P")
-        sign_time=df[(df['Session'] == session)&(df['Scene']== num )][['Consultant','Main New Gloss.1','Start','End']].get_values()
+        num=int(filename.split('-')[0][-1])        
+        sign_time=df[(df['Session'] == session)&(df['Scene']== num )][['Separate','Start','End']].get_values()
         video = vread(scene_path)
         d={}
-        for consultant,gloss, start, end in sign_time:
-            d[consultant + '_' + gloss]=video[slice(start,end)]        
+        for _l,name, start, end in sign_time:
+            name=name.split('"')[1].split('/')[-1]
+            d[name]=video[slice(start,end)]        
         return d
