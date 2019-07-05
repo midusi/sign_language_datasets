@@ -130,34 +130,38 @@ class DH_Lsa64_pre(DatasetHandler):
 
 class DH_Boston_pre(DatasetHandler):
 
+    def set_dai_path(self, mypath):
+        self.dai_path = osp.join(mypath, 'dai.xlsx')
+
     def get_my_url(self):
-        return 'http://csr.bu.edu/ftp/asl/asllvd/demos/verify_start_end_handshape_annotations//test_auto_move//signs_mov_separ_signers/'
+        return 'http://csr.bu.edu/ftp/asl/asllvd/asl-data2/quicktime/'
 
     def get_my_file_ext(self):
         return 'mov'
 
-    def get_first(self, path):
-        import openpyxl as pyxl
-        url = 'http://www.bu.edu/asllrp/dai-asllvd-BU_glossing_with_variations_HS_information-extended-urls-RU.xlsx'
-        self.file_path = osp.join(path, 'index_boston.xlsx')
-        if not osp.exists(self.file_path):
-            import requests
-            resp = requests.get(url)
-            with open(self.file_path, 'wb') as f:
-                f.write(resp.content)
-                f.close()
-        wb = pyxl.load_workbook(self.file_path)
-        ws = wb['Sheet1']
-        # extract first url from xlsx
-        return ws.cell(row=4, column=12).value.split('"')[1]
+    def get_first(self):
+        if not osp.exists(self.dai_path):
+            self.get_dai()
+        session, scene = self.mov_list()[2]
+        return self.get_my_url() + session + '/scene' + str(scene)+'-camera1.mov'
+
+    def get_dai(self):
+        import requests
+        resp = requests.get(
+            'http://www.bu.edu/asllrp/dai-asllvd-BU_glossing_with_variations_HS_information-extended-urls-RU.xlsx')
+        with open(self.dai_path, 'wb') as f:
+            f.write(resp.content)
+            f.close()
+
+    def mov_list(self):
+        import pandas as pd
+        return pd.read_excel(self.dai_path, usecols="M,N").drop_duplicates().sort_values(['Session', 'Scene']).get_values()
 
     def get_urls(self):
-        import openpyxl as pyxl
-        wb = pyxl.load_workbook(self.file_path)
-        ws = wb['Sheet1']
         urls = []
-        for val in filter(lambda cel: cel.value.startswith('=H'), ws['L']):
-            urls.append(val.value.split('"')[1])
+        for session, scene in (self.mov_list()[2:]):
+            urls.append(self.get_my_url() + session +
+                        '/scene' + str(scene)+'-camera1.mov')
         return urls
 
     def sign_class(self, parsed):
@@ -168,3 +172,16 @@ class DH_Boston_pre(DatasetHandler):
 
     def add_rep(self, repetition_s, d):
         repetition_s.add(None)
+
+    def extract_signs_from(self, scene_path):
+        from skvideo.io import vread
+        import pandas as pd
+        session, filename = scene_path.split('/')[-2:]
+        num=int(filename.split('-')[0][-1])
+        df = pd.read_excel(self.dai_path, usecols="C,D,M,N,O,P")
+        sign_time=df[(df['Session'] == session)&(df['Scene']== num )][['Consultant','Main New Gloss.1','Start','End']].get_values()
+        video = vread(scene_path)
+        d={}
+        for consultant,gloss, start, end in sign_time:
+            d[consultant + '_' + gloss]=video[slice(start,end)]        
+        return d

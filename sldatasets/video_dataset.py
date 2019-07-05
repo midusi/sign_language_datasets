@@ -17,7 +17,7 @@ class Videodataset(Generator):
             frames, specs = self.data.__next__()
             l = []
             for i, human in enumerate(self.npz_file(specs)):
-                l.append(frames[i], human)
+                l.append((frames[i], human))
             return (l, specs)
         except:
             self.throw()

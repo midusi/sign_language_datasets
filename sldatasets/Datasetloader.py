@@ -9,7 +9,6 @@ class Datasetloader(object):
         logging.info("starting loader")
         version = 'pre' if version is None else version
         self.x = dh.factory(self.__class__.__name__ + '_' + version)
-        self.base_url = self.x.get_my_url()
         self.my_path = self.x.get_my_path(root_path)
 
     def load_data(self, **kwargs):
@@ -20,6 +19,10 @@ class Datasetloader(object):
         d_flag = osp.join(self.my_path, 'downloaded')
         if not osp.exists(d_flag):
             self.download()
+        self.extract_data()
+
+    def extract_data(self):
+        pass
 
     def load_videos(self, path_videos, **kwargs):
         from skvideo.io import vread
@@ -29,6 +32,10 @@ class Datasetloader(object):
 
     def download(self):
         makedirs(self.my_path, exist_ok=True)
+        self.download_n_flag()
+
+    def download_n_flag(self):
+        pass
 
     def path_videos(self):
         pass
@@ -67,16 +74,14 @@ class LSA64(Datasetloader):
     def path_videos(self):
         return osp.join(self.my_path, self.x.get_my_folder())
 
-    def download(self):
-        super().download()
+    def download_n_flag(self):
         import gdown
         gdown.download(self.x.get_my_url(), osp.join(
             self.my_path, self.x.version + '.zip'), False)
         flag = osp.join(self.my_path, 'downloaded')
         open(flag, 'w').close()
 
-    def check_path(self):
-        super().check_path()
+    def extract_data(self):
         e_flag = osp.join(self.my_path, 'extracted')
         if not osp.exists(e_flag):
             self.extract()
@@ -93,29 +98,57 @@ class LSA64(Datasetloader):
 
 class Boston(Datasetloader):
 
-    def download(self):
-        super().download()
-        import gdown
+    def __init__(self, version=None, root_path=None):
+        super().__init__(version, root_path)
+        self.videos_path = osp.join(self.my_path, 'videos')
+        self.sessions_path = osp.join(self.my_path, 'sessions')
+        makedirs(self.sessions_path, exist_ok=True)
+        makedirs(self.videos_path, exist_ok=True)
+        self.x.set_dai_path(self.my_path)
+
+    def download_n_flag(self):
         partial = osp.join(self.my_path, 'partial')
-        last = self.x.get_first(self.my_path)
+        last = self.x.get_first()
+        m = None
         if osp.exists(partial):
-            with open(partial, 'r') as files_downloaded:
-                m = files_downloaded.readlines()
-                files_downloaded.close()
-            if m:
-                last = self.x.get_my_url() + m[-1].split('\n')[0]
+            last, m = self.last_from_partial(partial, last)
         with open(partial, 'a') as flag_file:
-            l = self.x.get_urls()
-            i = l.index(last)
-            if m:
-                i = i+1
-            for url in l[i:]:
-                filename = url.split('/')[-1]
-                gdown.download(url, osp.join(self.my_path, filename), False)
-                flag_file.write(filename + '\n')
-            flag_file.close()
+            self.download_n_registry(last, m, flag_file)
         ref = osp.join(self.my_path, 'downloaded')
         rename(partial, ref)
 
-    def path_videos(self):
-        return self.my_path
+    def download_n_registry(self, last, m, flag_file):
+        import gdown
+        urls = self.x.get_urls()
+        i = urls.index(last)
+        if m:
+            i = i+1
+        for url in urls[i:]:
+            session, scene = url.split('/')[-2:]
+            partial_registry = session+'/'+scene
+            gdown.download(url, self.file_path(session, scene), False)
+            flag_file.write(partial_registry + '\n')
+        flag_file.close()
+
+    def last_from_partial(self, partial, last):
+        with open(partial, 'r') as files_downloaded:
+            m = files_downloaded.readlines()
+            files_downloaded.close()
+        if m:
+            last = self.x.get_my_url() + m[-2:].split('\n')[0]
+        return last, m
+
+    def file_path(self, session, scene):
+        session_path = osp.join(self.sessions_path, session)
+        makedirs(session_path)
+        return osp.join(session_path, scene)
+
+    def extract_data(self):
+        from skvideo.io import vwrite
+        from os import walk
+        for (session_dir, _j, scenes) in list(walk(self.sessions_path)):
+            for scene in scenes:
+                scene_dict = self.x.extract_signs_from(
+                    osp.join(session_dir, scene))
+                for key, value in scene_dict.items():
+                    vwrite(osp.join(self.videos_path, key + '.mov'), value)

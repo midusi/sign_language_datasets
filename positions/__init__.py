@@ -108,3 +108,21 @@ def translate_tf_pose_humans(npz_file):
     outfile = osp.join(osp.dirname(npz_file), 'positions.npz')
     np.savez(outfile, **data)
     return outfile
+
+
+class ASLLVD (object):
+
+    def get(self):
+        from tf_pose.estimator import TfPoseEstimator
+        from tf_pose.networks import get_graph_path
+        from skvideo.io import vread
+        import sldatasets as sld
+        dataset = sld.get("boston").data
+        data = dataset.__next__()[0]
+        data = vread()
+        n, h, w, _c = data.shape
+        e = TfPoseEstimator(get_graph_path('cmu'), target_size=(w, h))
+        for j in range(n):
+            img = data[j:]
+            humans = e.inference(img, True, 4.0)
+            image = TfPoseEstimator.draw_humans(img, humans, imgcopy=False)
