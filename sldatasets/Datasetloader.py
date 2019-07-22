@@ -22,6 +22,11 @@ class Datasetloader(object):
         self.extract_data()
 
     def extract_data(self):
+        e_flag = osp.join(self.my_path, 'extracted')
+        if not osp.exists(e_flag):
+            self.extract()
+
+    def extract(self):
         pass
 
     def load_videos(self, path_videos, **kwargs):
@@ -81,11 +86,6 @@ class LSA64(Datasetloader):
         flag = osp.join(self.my_path, 'downloaded')
         open(flag, 'w').close()
 
-    def extract_data(self):
-        e_flag = osp.join(self.my_path, 'extracted')
-        if not osp.exists(e_flag):
-            self.extract()
-
     def load_anotations(self):
         import numpy as np
         outfile = osp.join(self.my_path, 'positions.npz')
@@ -143,7 +143,7 @@ class Boston(Datasetloader):
         makedirs(session_path)
         return osp.join(session_path, scene)
 
-    def extract_data(self):
+    def extract(self):
         from skvideo.io import vwrite
         from os import walk
         for (session_dir, _j, scenes) in list(walk(self.sessions_path)):
@@ -151,4 +151,6 @@ class Boston(Datasetloader):
                 scene_dict = self.x.extract_signs_from(
                     osp.join(session_dir, scene))
                 for key, value in scene_dict.items():
-                    vwrite(osp.join(self.videos_path, key + '.mov'), value)
+                    vwrite(osp.join(self.videos_path, key), value)
+        a = osp.join(self.my_path, 'extracted')
+        open(a, 'w').close()

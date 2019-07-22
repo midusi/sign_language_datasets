@@ -27,23 +27,34 @@ def make_npz(outfile, path):
 
 
 def get_humans_from_dataset(dataset, path=None):
-    from tf_pose.estimator import TfPoseEstimator
-    from tf_pose.networks import get_graph_path
-    e = TfPoseEstimator(get_graph_path('cmu'), target_size=(432, 368))
     videos_processed = {}
     outfile = osp.curdir() if path is None else path
     print('processing videos wait...')
-    for video in dataset:
-        video_name = video[1]['class']+'_' + \
-            video[1]['consultant']+'_'+video[1]['repetition']
+    process_dataset(dataset, videos_processed, outfile)
+    outfile = osp.join(outfile, 'dataset_humans.npz')
+    np.savez(outfile, **videos_processed)
+    print('the file is saved in ', outfile)
+
+
+def process_dataset(dataset, videos_processed, outfile):
+    data, e = get_estimator(dataset)
+    for video in data:
+        video_name = video[1]['filename']
         try:
             videos_processed[video_name] = process_video(video[0], e)
         except InferenceError as ie:
             videos_processed[video_name] = ie.args
             error_handle(ie.args, outfile, video_name)
-    outfile = osp.join(outfile, 'dataset_humans.npz')
-    np.savez(outfile, **videos_processed)
-    print('the file is saved in ', outfile)
+
+
+def get_estimator(dataset):
+    from tf_pose.estimator import TfPoseEstimator
+    from tf_pose.networks import get_graph_path
+    from itertools import tee
+    data, copy = tee(dataset)
+    _n, h, w, _c = copy.__next__().shape
+    e = TfPoseEstimator(get_graph_path('cmu'), target_size=(w, h))
+    return data, e
 
 
 def frames_failed(frames):

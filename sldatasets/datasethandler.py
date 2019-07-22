@@ -44,38 +44,42 @@ class DatasetHandler(object):
             f'{self.get_my_file_ext()}'), sorted(files)))
 
         def file_filter(self, f, clas, consultant, repetition):
-            name = self.parsed_name(f)
-            return ((int(name['class']) == int(clas) if clas else True) and
-                    (int(name['consultant']) == consultant if consultant else True) and
-                    (int(name['repetition']) == repetition if repetition else True))
+            d_specs = self.video_info(f)
+            return ((int(self.word_class(d_specs)) == int(clas) if clas else True) and
+                    (int(self.consultant_of(d_specs)) == consultant if consultant else True) and
+                    (int(self.rept(d_specs)) == repetition if repetition else True))
         l = list(filter(lambda f: file_filter(
             self, f, kwargs.get('index'), kwargs.get('consultant'), kwargs.get('repetition')), l))
         return l
 
-    def parsed_name(self, filename):
-        val = filename.split('_')
-        return {'class': self.sign_class(val), 'consultant': self.consultant(val)}
+    def specs_from(self, filename):
+        d=self.video_info(filename)
+        d['filename']= filename    
+        return d
 
-    def sign_class(self, parsed):
-        return parsed[0]
-
-    def consultant(self, parsed):
-        return parsed[1]
+    def video_info(self, filename):
+        return NotImplementedError
 
     def word_count(self, videos_list):
         class_s = set([])
         consultant_s = set([])
         repetition_s = set([])
         for video in filter(lambda f: osp.splitext(f)[1].endswith(f'{self.get_my_file_ext()}'), videos_list):
-            d = self.parsed_name(video)
-            class_s.add(d['class'])
-            consultant_s.add(d['consultant'])
-            self.add_rep(repetition_s, d)
+            d = self.specs_from(video)
+            class_s.add(self.word_class(d))
+            consultant_s.add(self.consultant_of(d))
+            repetition_s.add(self.rept(d))
         return [len(class_s), len(consultant_s), len(repetition_s)]
 
-    def add_rep(self, repetition_s, d):
-        repetition_s.add(d['repetition'])
+    def consultant_of(self, d):
+        return d['consultant']
 
+    def word_class(self, d):
+        return d['class']
+
+    def rept(self, d):
+        return d['repetition']
+    
     def get_pos_url(self):
         pass
 
@@ -103,10 +107,13 @@ class DH_Lsa64(DatasetHandler):
     def get_my_file_ext(self):
         return 'mp4'
 
-    def parsed_name(self, filename):
-        d = super().parsed_name(filename)
-        d['repetition'] = filename.split('_')[2].split('.')[0]
-        return d
+    def video_info(self,filename):
+        splited = filename.split('_')
+        info_dict={}
+        info_dict['class']= splited[0]
+        info_dict['consultant']= splited[1]        
+        info_dict['repetition'] = splited[2].split('.')[0]
+        return info_dict
 
 
 class DH_Lsa64_pre(DatasetHandler):
@@ -120,13 +127,14 @@ class DH_Lsa64_pre(DatasetHandler):
     def get_my_file_ext(self):
         return 'avi'
 
-    def parsed_name(self, filename):
-        d = super().parsed_name(filename)
-        v = filename.split('_')
-        d['repetition'] = v[2]
-        d['hand'] = v[3].split('.')[0]
-        return d
-
+    def video_info(self, filename):
+        splited = filename.split('_')
+        info_dict = {}
+        info_dict['class']= splited[0]
+        info_dict['consultant']= splited[1]        
+        info_dict['repetition'] = splited[2]
+        info_dict['hand'] = splited[3].split('.')[0]
+        return info_dict
 
 class DH_Boston_pre(DatasetHandler):
 
@@ -147,11 +155,25 @@ class DH_Boston_pre(DatasetHandler):
 
     def get_dai(self):
         import requests
+        import openpyxl as pyxl
+        from tempfile import NamedTemporaryFile as nt
         resp = requests.get(
             'http://www.bu.edu/asllrp/dai-asllvd-BU_glossing_with_variations_HS_information-extended-urls-RU.xlsx')
-        with open(self.dai_path, 'wb') as f:
+        t=nt()    
+        with open(t.name, 'wb') as f:
             f.write(resp.content)
             f.close()
+        new_name=t.name + '.xlsx'
+        rename(t.name,new_name)
+        wb = pyxl.load_workbook(new_name)
+        ws = wb.active        
+        for link in filter(lambda cell: cell.value.startswith('=HYPER') ,ws['L']):
+            link.value = link.value.split('"')[1].split('/')[-1]
+        ws['L'][0].value='Filename'
+        ws['D'][0].value='Main_Gloss'
+        wb.save(self.dai_path)
+        
+
 
     def mov_list(self):
         import pandas as pd
@@ -162,16 +184,21 @@ class DH_Boston_pre(DatasetHandler):
         for session, scene in (self.mov_list()[2:]):
             urls.append(self.get_my_url() + session +
                         '/scene' + str(scene)+'-camera1.mov')
-        return urls
+        return urls  
+    
+    def video_info(self, filename):
+        import pandas as pd        
+        df=pd.read_excel(self.dai_path)
+        return df.loc[:, 'Consultant':'Passive Arm'][(df.Filename == filename)].to_dict('records')
+        
+    def consultant_of(self, d):
+        return d['Consultant']
 
-    def sign_class(self, parsed):
-        return parsed[1].split('.')[0]
+    def word_class(self, d):
+        return d['Main_Gloss']
 
-    def consultant(self, parsed):
-        return parsed[0]
-
-    def add_rep(self, repetition_s, d):
-        repetition_s.add(None)
+    def rept(self, d):
+        return None
 
     def extract_signs_from(self, scene_path):
         from skvideo.io import vread
