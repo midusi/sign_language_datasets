@@ -1,7 +1,7 @@
 from collections.abc import Generator
-from sldatasets.Datasetloader import LSA64, Boston
+from sldatasets.Datasetloader import LSA64, ASLLVD
 datasets = {"lsa64": LSA64,
-            "boston": Boston
+            "asllvd": ASLLVD
             }
 
 
@@ -13,14 +13,18 @@ class Videodataset(Generator):
         self.data = self.loader.load_data(**kwargs)
 
     def send(self, ignored_arg):
+        frames, specs = self.data.__next__()
+        l = []
+        anotation = self.loader.load_anotations()
+        anot_index = specs['filename'].split('.')[0]
         try:
-            frames, specs = self.data.__next__()
-            l = []
-            for i, human in enumerate(self.npz_file(specs)):
+            for i, human in enumerate(anotation[anot_index]):
                 l.append((frames[i], human))
             return (l, specs)
-        except:
-            self.throw()
+        except TypeError:
+            for f in frames:
+                l.append((f, anotation[anot_index]))
+            return (l, specs)
 
     def npz_file(self, specs):
         return self.loader.load_anotations()[specs['class']+'_' + specs['consultant']+'_'+specs['repetition']]

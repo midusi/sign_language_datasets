@@ -1,12 +1,16 @@
 import sldatasets as sld
 
-dataset = sld.get("boston")
+dataset = sld.get("asllvd")
 dataset.summary()
-video, description = dataset.__next__()
-print(video[0][0].shape)
-print(description)
-dataset = sld.get("lsa64", version="raw")
+for video, description in dataset:
+    print(description)
+    frame, frame_annot = video[3]
+    print(frame.shape)
+    print(frame_annot)
+dataset = sld.get("lsa64", version='pre')
 dataset.summary()
-video, description = dataset.__next__()
-print(video[0][0].shape)
-print(description)
+for video, description in dataset:
+    print(description)
+    frame, frame_annot = video[3]
+    print(frame.shape)
+    print(frame_annot)

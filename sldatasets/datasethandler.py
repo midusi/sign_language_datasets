@@ -6,7 +6,7 @@ class DatasetHandler(object):
     handler_class = {f'LSA64_raw': 'DH_Lsa64',
                      'LSA64_cut': 'DH_Lsa64',
                      'LSA64_pre': 'DH_Lsa64_pre',
-                     'Boston_pre': 'DH_Boston_pre'
+                     'ASLLVD_pre': 'DH_ASLLVD_pre'
                      }
 
     def __init__(self, version):
@@ -28,7 +28,8 @@ class DatasetHandler(object):
             return globals()[e](version)
         except:
             raise ValueError(
-                'version for lsa64("version"), must be "cut", "raw" or "pre"')
+                'version for lsa64("version"), must be "cut", "raw" or "pre" \
+                version for asllvd must be None')
 
     def get_my_url(self):
         raise NotImplementedError
@@ -54,7 +55,7 @@ class DatasetHandler(object):
 
     def specs_from(self, filename):
         d=self.video_info(filename)
-        d['filename']= filename    
+        d['filename']= filename
         return d
 
     def video_info(self, filename):
@@ -94,7 +95,7 @@ class DH_Lsa64(DatasetHandler):
 
     def get_pos_url(self):
         if self.version == 'LSA64_raw':
-            return 'https://'
+            raise NotImplementedError
         else:
             return 'https://drive.google.com/uc?id=1_byVg8q_GmfPvHps5irGRikEfeuYo5-r&'
 
@@ -126,6 +127,8 @@ class DH_Lsa64_pre(DatasetHandler):
 
     def get_my_file_ext(self):
         return 'avi'
+    def get_pos_url(self):
+        return 'https://drive.google.com/uc?id=1JYTZW8432UAqIm2tXrLNOASzZwdj3EDH'    
 
     def video_info(self, filename):
         splited = filename.split('_')
@@ -136,10 +139,14 @@ class DH_Lsa64_pre(DatasetHandler):
         info_dict['hand'] = splited[3].split('.')[0]
         return info_dict
 
-class DH_Boston_pre(DatasetHandler):
+class DH_ASLLVD_pre(DatasetHandler):
 
     def set_dai_path(self, mypath):
-        self.dai_path = osp.join(mypath, 'dai.xlsx')
+        from pandas import read_excel as rex        
+        dai_path = osp.join(mypath, 'dai.xlsx')
+        if not osp.exists(dai_path):
+            self.get_dai(dai_path)
+        self.dframe=rex(dai_path)
 
     def get_my_url(self):
         return 'http://csr.bu.edu/ftp/asl/asllvd/asl-data2/quicktime/'
@@ -147,13 +154,14 @@ class DH_Boston_pre(DatasetHandler):
     def get_my_file_ext(self):
         return 'mov'
 
-    def get_first(self):
-        if not osp.exists(self.dai_path):
-            self.get_dai()
+    def get_pos_url(self):
+        raise NotImplementedError
+
+    def get_first(self):        
         session, scene = self.mov_list()[2]
         return self.get_my_url() + session + '/scene' + str(scene)+'-camera1.mov'
 
-    def get_dai(self):
+    def get_dai(self, dpath):
         import requests
         import openpyxl as pyxl
         from tempfile import NamedTemporaryFile as nt
@@ -171,13 +179,12 @@ class DH_Boston_pre(DatasetHandler):
             link.value = link.value.split('"')[1].split('/')[-1]
         ws['L'][0].value='Filename'
         ws['D'][0].value='Main_Gloss'
-        wb.save(self.dai_path)
+        wb.save(dpath)
         
 
 
-    def mov_list(self):
-        import pandas as pd
-        return pd.read_excel(self.dai_path, usecols="M,N").drop_duplicates().sort_values(['Session', 'Scene']).get_values()
+    def mov_list(self):        
+        return self.dframe[['Session', 'Scene']].drop_duplicates().sort_values(['Session', 'Scene']).get_values()
 
     def get_urls(self):
         urls = []
@@ -186,10 +193,8 @@ class DH_Boston_pre(DatasetHandler):
                         '/scene' + str(scene)+'-camera1.mov')
         return urls  
     
-    def video_info(self, filename):
-        import pandas as pd        
-        df=pd.read_excel(self.dai_path)
-        return df.loc[:, 'Consultant':'Passive Arm'][(df.Filename == filename)].to_dict('records')
+    def video_info(self, filename):        
+        return self.dframe.loc[:, 'Consultant':'Passive Arm'][(self.dframe.Filename == filename)].to_dict('records')[0]
         
     def consultant_of(self, d):
         return d['Consultant']
@@ -201,20 +206,12 @@ class DH_Boston_pre(DatasetHandler):
         return None
 
     def extract_signs_from(self, scene_path):
-        from skvideo.io import vread
-        import pandas as pd
-        import openpyxl as pyxl
-        wb = pyxl.load_workbook(self.dai_path)
-        ws = wb['Sheet1']
-        data=ws.values
-        columns = next(data)[0:]
-        df = pd.DataFrame(data, columns=columns)        
+        from skvideo.io import vread            
         session, filename = scene_path.split('/')[-2:]
         num=int(filename.split('-')[0][-1])        
-        sign_time=df[(df['Session'] == session)&(df['Scene']== num )][['Separate','Start','End']].get_values()
+        sign_time=self.dframe[(self.dframe['Session'] == session)&(self.dframe['Scene']== num )][['Filename','Start','End']].get_values()
         video = vread(scene_path)
         d={}
-        for _l,name, start, end in sign_time:
-            name=name.split('"')[1].split('/')[-1]
+        for _l,name, start, end in sign_time:            
             d[name]=video[slice(start,end)]        
         return d

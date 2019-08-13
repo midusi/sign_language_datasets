@@ -33,7 +33,7 @@ class Datasetloader(object):
         from skvideo.io import vread
         logging.info(f"Loading videos from {path_videos}")
         for filename in self.x.redux(osl(path_videos), **kwargs):
-            yield [vread(osp.join(path_videos, filename)), self.x.parsed_name(filename)]
+            yield [vread(osp.join(path_videos, filename)), self.x.specs_from(filename)]
 
     def download(self):
         makedirs(self.my_path, exist_ok=True)
@@ -52,7 +52,24 @@ class Datasetloader(object):
                 'link': self.x.get_my_url(),
                 'words': c[0],
                 'subjects': c[1],
-                'repetitions': c[2]}
+                'repetitions': c[2],
+                'resolution': self.resolution()}
+
+    def resolution(self):
+        from skvideo.io import vread
+        l = list(filter(lambda f: osp.splitext(f)[1].endswith(
+            f'{self.x.get_my_file_ext()}'), sorted(osl(self.path_videos()))))
+        _n, h, w, _c = vread(osp.join(self.path_videos(), l[0])).shape
+        return str(h) + ' x ' + str(w)
+
+    def load_anotations(self):
+        import numpy as np
+        outfile = osp.join(self.my_path, 'positions.npz')
+        if not osp.exists(outfile):
+            from gdown import download
+            logging.info(f"Dowloading Positions to {outfile}")
+            download(self.x.get_pos_url(), outfile, quiet=False)
+        return np.load(outfile)
 
 
 class LSA64(Datasetloader):
@@ -86,17 +103,8 @@ class LSA64(Datasetloader):
         flag = osp.join(self.my_path, 'downloaded')
         open(flag, 'w').close()
 
-    def load_anotations(self):
-        import numpy as np
-        outfile = osp.join(self.my_path, 'positions.npz')
-        if not osp.exists(outfile):
-            from gdown import download
-            logging.info(f"Dowloading Positions to {outfile}")
-            download(self.x.get_pos_url(), outfile, quiet=False)
-        return np.load(outfile)
 
-
-class Boston(Datasetloader):
+class ASLLVD(Datasetloader):
 
     def __init__(self, version=None, root_path=None):
         super().__init__(version, root_path)
@@ -105,6 +113,9 @@ class Boston(Datasetloader):
         makedirs(self.sessions_path, exist_ok=True)
         makedirs(self.videos_path, exist_ok=True)
         self.x.set_dai_path(self.my_path)
+
+    def path_videos(self):
+        return self.videos_path
 
     def download_n_flag(self):
         partial = osp.join(self.my_path, 'partial')

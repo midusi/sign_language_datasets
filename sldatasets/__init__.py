@@ -1,6 +1,6 @@
 __version__ = "0.0.1"
 
-from sldatasets.Datasetloader import LSA64, Boston
+from sldatasets.Datasetloader import LSA64, ASLLVD
 from sldatasets.video_dataset import Videodataset
 import os
 from pathlib import Path
@@ -8,7 +8,7 @@ from pathlib import Path
 
 # association between datasets_ids and loader classes
 datasets = {"lsa64": LSA64,
-            "boston": Boston
+            "asllvd": ASLLVD
             }
 
 

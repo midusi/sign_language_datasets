@@ -1,6 +1,7 @@
 
 from os import path as osp
 import numpy as np
+from sldatasets.body import Human
 
 
 def positions_mat_to_npz(path=None):
@@ -23,7 +24,16 @@ def make_npz(outfile, path):
         for j in range(n):
             result[j] = mat_file[db[key][j][0]][()]
         data[key] = result
-    np.savez(outfile, **data)
+    dat = {}
+    for i in range(3200):
+        filename = ''
+        for k in ('class', 'subject', 'repetition'):
+            value_name = str(int(data[k][i][0][0])).zfill(3) + '_'
+            filename += value_name
+        dat[filename + 'right'] = data['hand_positions_right'][i][0][0]
+        if (data['hand_left_exist_in_frame'][i][0][0] == 1):
+            dat[filename + 'left'] = data['hand_positions_left'][i][0][0]
+    np.savez(outfile, **dat)
 
 
 def get_humans_from_dataset(dataset, path=None):
@@ -31,7 +41,7 @@ def get_humans_from_dataset(dataset, path=None):
     outfile = osp.curdir() if path is None else path
     print('processing videos wait...')
     process_dataset(dataset, videos_processed, outfile)
-    outfile = osp.join(outfile, 'dataset_humans.npz')
+    outfile = osp.join(outfile, 'positions.npz')
     np.savez(outfile, **videos_processed)
     print('the file is saved in ', outfile)
 
@@ -39,7 +49,7 @@ def get_humans_from_dataset(dataset, path=None):
 def process_dataset(dataset, videos_processed, outfile):
     data, e = get_estimator(dataset)
     for video in data:
-        video_name = video[1]['filename']
+        video_name = video[1]['filename'].split('.')[0]
         try:
             videos_processed[video_name] = process_video(video[0], e)
         except InferenceError as ie:
@@ -52,7 +62,7 @@ def get_estimator(dataset):
     from tf_pose.networks import get_graph_path
     from itertools import tee
     data, copy = tee(dataset)
-    _n, h, w, _c = copy.__next__().shape
+    _n, h, w, _c = copy.__next__()[0].shape
     e = TfPoseEstimator(get_graph_path('cmu'), target_size=(w, h))
     return data, e
 
@@ -84,9 +94,13 @@ def process_video(video, e):
     for j in range(0, n):
         img = video[j, :]
         humans = e.inference(img, True, 4.0)
-        frames.append(humans)
         if len(humans) != 1:
             b = True
+        else:
+            h = Human([])
+            h.body_parts = humans[0].body_parts
+            h.score = humans[0].score
+        frames.append(humans)
     if b:
         raise InferenceError(frames)
     return frames
@@ -119,21 +133,3 @@ def translate_tf_pose_humans(npz_file):
     outfile = osp.join(osp.dirname(npz_file), 'positions.npz')
     np.savez(outfile, **data)
     return outfile
-
-
-class ASLLVD (object):
-
-    def get(self):
-        from tf_pose.estimator import TfPoseEstimator
-        from tf_pose.networks import get_graph_path
-        from skvideo.io import vread
-        import sldatasets as sld
-        dataset = sld.get("boston").data
-        data = dataset.__next__()[0]
-        data = vread()
-        n, h, w, _c = data.shape
-        e = TfPoseEstimator(get_graph_path('cmu'), target_size=(w, h))
-        for j in range(n):
-            img = data[j:]
-            humans = e.inference(img, True, 4.0)
-            image = TfPoseEstimator.draw_humans(img, humans, imgcopy=False)
