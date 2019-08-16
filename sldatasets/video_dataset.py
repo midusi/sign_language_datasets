@@ -15,7 +15,7 @@ class Videodataset(Generator):
     def send(self, ignored_arg):
         frames, specs = self.data.__next__()
         l = []
-        anotation = self.loader.load_anotations()
+        anotation = self.loader.load_annotations()
         anot_index = specs['filename'].split('.')[0]
         try:
             for i, human in enumerate(anotation[anot_index]):
@@ -25,9 +25,6 @@ class Videodataset(Generator):
             for f in frames:
                 l.append((f, anotation[anot_index]))
             return (l, specs)
-
-    def npz_file(self, specs):
-        return self.loader.load_anotations()[specs['class']+'_' + specs['consultant']+'_'+specs['repetition']]
 
     def throw(self, type=None, value=None, traceback=None):
         raise StopIteration
@@ -41,28 +38,3 @@ class Videodataset(Generator):
 
     def summary(self):
         print(self.loader.get_summary())
-
-    def walk_through_pre(self, video_tuple):
-
-        npzfile = self.loader.load_anotations(version='pre')
-        x = video_tuple[1].split('_')
-        index = (int(x[0])-1)*50+(int(x[1])-1)*5+int(x[2])-1
-        video = video_tuple[0]
-        n, _h, _w, _c = video.shape
-        frames = []
-        for j in range(0, n):
-            frames.append(self.get_tuple(video[j, :], j, index, npzfile))
-        return (n for n in frames)
-
-    def get_tuple(self, frame, j, index, npz):
-        tup = (frame,)
-        for key in npz.files:
-            anotation = npz[key][index]
-            if key.split('_').__contains__('exist'):
-                tup = tup + (anotation[j],)
-            elif key.split('_').__contains__('positions'):
-                tup = tup + (anotation[0][j],
-                             anotation[1][j])
-            else:
-                tup = tup + (anotation[0],)
-        return tup

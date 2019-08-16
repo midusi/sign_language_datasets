@@ -3,9 +3,9 @@ from os import path as osp, rename
 
 
 class DatasetHandler(object):
-    handler_class = {f'LSA64_raw': 'DH_Lsa64',
-                     'LSA64_cut': 'DH_Lsa64',
-                     'LSA64_pre': 'DH_Lsa64_pre',
+    handler_class = {f'LSA64_raw': 'DH_LSA64',
+                     'LSA64_cut': 'DH_LSA64',
+                     'LSA64_pre': 'DH_LSA64_pre',
                      'ASLLVD_pre': 'DH_ASLLVD_pre'
                      }
 
@@ -85,7 +85,7 @@ class DatasetHandler(object):
         pass
 
 
-class DH_Lsa64(DatasetHandler):
+class DH_LSA64(DatasetHandler):
 
     def get_my_url(self):
         if self.version == 'LSA64_raw':
@@ -117,7 +117,7 @@ class DH_Lsa64(DatasetHandler):
         return info_dict
 
 
-class DH_Lsa64_pre(DatasetHandler):
+class DH_LSA64_pre(DatasetHandler):
 
     def get_my_url(self):
         return 'https://drive.google.com/uc?id=1yhfPpI2iJzPXyx4C7MYR6IPZC3YuuYaL'

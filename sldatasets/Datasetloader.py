@@ -62,7 +62,7 @@ class Datasetloader(object):
         _n, h, w, _c = vread(osp.join(self.path_videos(), l[0])).shape
         return str(h) + ' x ' + str(w)
 
-    def load_anotations(self):
+    def load_annotations(self):
         import numpy as np
         outfile = osp.join(self.my_path, 'positions.npz')
         if not osp.exists(outfile):
