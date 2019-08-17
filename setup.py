@@ -1,15 +1,16 @@
 from setuptools import find_packages, setup
 
-REQUIRED_PACKAGES =[
+REQUIRED_PACKAGES = [
     'scikit-video',
-    'matplotlib',
     'gdown',
     'pathlib',
-    'opencv-python',
-    'tensorflow',
+    'openpyxl',
+    'xlrd',
+    'pandas',
+    'numpy',
 ]
 
-PROJECT_URLS={
+PROJECT_URLS = {
     'Tracker': 'https://github.com/midusi/sign_language_datasets/issues',
     'Documentation': 'https://github.com/midusi/sign_language_datasets/wiki',
     'Source': 'https://github.com/midusi/sign_language_datasets',
@@ -17,7 +18,7 @@ PROJECT_URLS={
 
 setup(
     name='sldatasets',
-    version='0.0.1',
+    version='0.0.2',
     author='Pablo Kepes and Facundo Quiroga',
     author_email="signlanguagedatasets@gmail.com",
     description=(
@@ -28,9 +29,10 @@ setup(
     project_urls=PROJECT_URLS,
     packages=find_packages(),
     install_requires=REQUIRED_PACKAGES,
-    #zip_safe=False,
+    # zip_safe=False,
     classifiers=[
-        'Development Status :: 2 - Pre-Alpha',
+        'Development Status :: 3 - Alpha',
+        'Intended Audience :: Science/Research',
         'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.7',

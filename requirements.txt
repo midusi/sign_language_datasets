@@ -1,6 +1,7 @@
 scikit-video
-matplotlib
+pandas
 gdown
 pathlib
-opencv-python
-tensorflow
+numpy
+openpyxl
+xlrd

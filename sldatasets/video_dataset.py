@@ -18,13 +18,15 @@ class Videodataset(Generator):
         anotation = self.loader.load_annotations()
         anot_index = specs['filename'].split('.')[0]
         try:
-            for i, human in enumerate(anotation[anot_index]):
-                l.append((frames[i], human))
+            for i, man in enumerate(anotation[anot_index]):
+                l.append((frames[i], man))
             return (l, specs)
         except TypeError:
             for f in frames:
                 l.append((f, anotation[anot_index]))
             return (l, specs)
+        except ModuleNotFoundError:
+            print(anotation[anot_index].__class__)
 
     def throw(self, type=None, value=None, traceback=None):
         raise StopIteration

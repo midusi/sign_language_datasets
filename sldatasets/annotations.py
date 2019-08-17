@@ -13,6 +13,22 @@ def _include_part(part_list, part_idx):
     return False, None
 
 
+class Frame_annotation(object):
+
+    def __init__(self, hum):
+        self.h = hum
+
+    def get(self):
+        dic = {}
+        for part in self.h.body_parts.values():
+            dic[part.get_part_name().name] = (part.x, part.y, part.score)
+        return dic
+
+    def pretty(self):
+        import pprint
+        pprint.pprint(self.get())
+
+
 class Human:
     """
     body_parts: list of BodyPart

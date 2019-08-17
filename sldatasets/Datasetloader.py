@@ -69,7 +69,7 @@ class Datasetloader(object):
             from gdown import download
             logging.info(f"Dowloading Positions to {outfile}")
             download(self.x.get_pos_url(), outfile, quiet=False)
-        return np.load(outfile)
+        return np.load(outfile, allow_pickle=True)
 
 
 class LSA64(Datasetloader):
