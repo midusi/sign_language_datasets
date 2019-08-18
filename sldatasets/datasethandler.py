@@ -46,11 +46,15 @@ class DatasetHandler(object):
 
         def file_filter(self, f, clas, consultant, repetition):
             d_specs = self.video_info(f)
-            return ((int(self.word_class(d_specs)) == int(clas) if clas else True) and
-                    (int(self.consultant_of(d_specs)) == consultant if consultant else True) and
-                    (int(self.rept(d_specs)) == repetition if repetition else True))
+            try:
+                clas=clas.lower()
+                consultant=consultant.lower()            
+            finally:
+                return ((self.word_class(d_specs) == clas if clas else True) and
+                        (self.consultant_of(d_specs) == consultant if consultant else True) and
+                        (self.rept(d_specs) == repetition if repetition else True))
         l = list(filter(lambda f: file_filter(
-            self, f, kwargs.get('index'), kwargs.get('consultant'), kwargs.get('repetition')), l))
+            self, f, kwargs.get('word'), kwargs.get('consultant'), kwargs.get('repetition')), l))
         return l
 
     def specs_from(self, filename):
@@ -111,9 +115,9 @@ class DH_LSA64(DatasetHandler):
     def video_info(self,filename):
         splited = filename.split('_')
         info_dict={}
-        info_dict['class']= splited[0]
-        info_dict['consultant']= splited[1]        
-        info_dict['repetition'] = splited[2].split('.')[0]
+        info_dict['class']= int(splited[0])
+        info_dict['consultant']= int(splited[1])
+        info_dict['repetition'] = int(splited[2].split('.')[0])
         return info_dict
 
 
@@ -133,9 +137,9 @@ class DH_LSA64_pre(DatasetHandler):
     def video_info(self, filename):
         splited = filename.split('_')
         info_dict = {}
-        info_dict['class']= splited[0]
-        info_dict['consultant']= splited[1]        
-        info_dict['repetition'] = splited[2]
+        info_dict['class']= int(splited[0])
+        info_dict['consultant']= int(splited[1])
+        info_dict['repetition'] = int(splited[2])
         info_dict['hand'] = splited[3].split('.')[0]
         return info_dict
 
@@ -197,10 +201,10 @@ class DH_ASLLVD_pre(DatasetHandler):
         return self.dframe.loc[:, 'Consultant':'Passive Arm'][(self.dframe.Filename == filename)].to_dict('records')[0]
         
     def consultant_of(self, d):
-        return d['Consultant']
+        return d['Consultant'].lower()
 
     def word_class(self, d):
-        return d['Main_Gloss']
+        return d['Main_Gloss'].lower()
 
     def rept(self, d):
         return None

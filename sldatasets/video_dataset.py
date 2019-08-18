@@ -25,8 +25,6 @@ class Videodataset(Generator):
             for f in frames:
                 l.append((f, anotation[anot_index]))
             return (l, specs)
-        except ModuleNotFoundError:
-            print(anotation[anot_index].__class__)
 
     def throw(self, type=None, value=None, traceback=None):
         raise StopIteration
