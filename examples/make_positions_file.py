@@ -13,11 +13,11 @@ example_path = osp.join(Path.home(), '.sldatasets')
 # # ~/.sldatasets/LSA64_raw
 a_path = osp.join(example_path, 'LSA64_raw')
 positions.get_humans_from_dataset(
-    sld.get('lsa64', version='raw'), a_path)
+    sld.get('lsa64', version='raw').data, a_path)
 
 a_path = osp.join(example_path, 'LSA64_cut')
 positions.get_humans_from_dataset(
-    sld.get('lsa64', version='cut'), a_path)
+    sld.get('lsa64', version='cut').data, a_path)
 
 a_path = osp.join(example_path, 'ASLLVD_pre')
 positions.get_humans_from_dataset(sld.get('asllvd').data, a_path)
