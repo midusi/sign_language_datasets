@@ -68,19 +68,19 @@ def get_estimator(dataset):
     return data, e
 
 
-def frames_failed(frames):
+def frames_failed(annotations):
     index_list = []
-    for idx, f in enumerate(frames):
-        if len(f) != 1:
+    for idx, annot in enumerate(annotations):
+        if annot.h.part_count() == 0:
             index_list.append(str(idx))
     return index_list
 
 
-def error_handle(frames, path, video_name):
+def error_handle(fr_annot, path, video_name):
     with open(osp.join(path, 'processing.log'), 'a') as log:
         log.write('the video ' +
                   video_name + " couldn't be correctly processed, frames failed: ")
-        for v in frames_failed(frames):
+        for v in frames_failed(fr_annot):
             log.write(v + ' ')
         log.write('\n')
         log.close()
@@ -90,7 +90,7 @@ def error_handle(frames, path, video_name):
 
 def process_video(video, e):
     n, _h, _w, _c = video.shape
-    frames = []
+    fr_annot = []
     b = False
     for j in range(0, n):
         img = video[j, :]
@@ -100,10 +100,10 @@ def process_video(video, e):
             b = True
         else:
             h = translate(humans, h)
-        frames.append(fa(h))
+        fr_annot.append(fa(h))
     if b:
-        raise InferenceError(frames)
-    return frames
+        raise InferenceError(fr_annot)
+    return fr_annot
 
 
 def translate(humans, h):
